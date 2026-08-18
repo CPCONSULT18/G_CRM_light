@@ -2,6 +2,12 @@
 
 All notable changes to this project, dated.
 
+## [0.3.0] — 2026-08-18
+- Phase 2 complete: dedicated Today queue (`/today`).
+- Added: Today view = callbacks due (activities with due_date <= today) + fresh queue (leads in new/called/no_answer/voicemail status, hard matches excluded), sorted region -> oldest.
+- Added: sidebar Today nav entry.
+- Improved: importer now idempotent — re-importing the same file creates no duplicate companies, locations, contacts, or leads (verified 3x import yields identical counts).
+
 ## [0.2.0] — 2026-08-18
 - Phase 1 complete: data core verified end-to-end.
 - Added: Flask app skeleton (factory + blueprints: main, leads, imports, map, reports, settings), `run.py`, `start.bat`.

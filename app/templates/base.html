@@ -12,6 +12,7 @@
     <div class="brand">LeadFlow<span class="dot">.</span></div>
     <nav class="nav">
       <a href="{{ url_for('main.index') }}" {% if request.endpoint == 'main.index' %}class="active"{% endif %}>Dashboard</a>
+      <a href="{{ url_for('main.today') }}" {% if request.endpoint == 'main.today' %}class="active"{% endif %}>Today</a>
       <a href="{{ url_for('leads.list_leads') }}" {% if request.endpoint and request.endpoint.startswith('leads.') %}class="active"{% endif %}>Leads</a>
       <a href="{{ url_for('imports.import_page') }}" {% if request.endpoint and request.endpoint.startswith('imports.') %}class="active"{% endif %}>Import</a>
       <a href="{{ url_for('imports.match_review') }}" {% if request.endpoint == 'imports.match_review' %}class="active"{% endif %}>Matches</a>

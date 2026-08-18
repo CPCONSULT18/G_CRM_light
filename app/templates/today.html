@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Today — LeadFlow{% endblock %}
+{% block content %}
+<div class="flex" style="justify-content: space-between; align-items: center;">
+  <h1>Today</h1>
+  <span class="muted small">{{ today }}</span>
+</div>
+
+{% if callbacks %}
+<h2>Callbacks due</h2>
+<div class="card">
+  {% for c in callbacks %}
+  <div class="flex" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--hairline);">
+    <div>
+      <a href="{{ url_for('leads.lead_detail', lead_id=c.lead_id) }}">{{ c.company_name }}</a>
+      <span class="muted small"> · {{ c.region or '—' }} · {{ c.n_contacts }} contact(s) · {{ c.n_locations }} location(s)</span>
+      {% if c.match_confs %}
+        {% for conf in c.match_confs.split(',') %}
+          <span class="badge {{ conf }}">{{ conf }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <span class="small muted">due {{ c.due_date }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>Queue <span class="muted small">({{ fresh|length }} to call, hard matches excluded)</span></h2>
+{% if fresh %}
+  {% for l in fresh %}
+  <div class="card">
+    <div class="flex" style="justify-content: space-between;">
+      <div>
+        <a href="{{ url_for('leads.lead_detail', lead_id=l.lead_id) }}" style="font-size:1.05rem;">{{ l.company_name }}</a>
+        <span class="muted small"> · {{ l.region or '—' }}</span>
+        <span class="muted small"> · {{ l.n_contacts }} contact(s) · {{ l.n_locations }} location(s)</span>
+        {% if l.match_confs %}
+          {% for conf in l.match_confs.split(',') %}
+            <span class="badge {{ conf }}">{{ conf }}</span>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <a class="btn small" href="{{ url_for('leads.lead_detail', lead_id=l.lead_id) }}">Open & log</a>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<p class="muted">Queue is empty. <a href="{{ url_for('imports.import_page') }}">Import leads</a> to fill it.</p>
+{% endif %}
+{% endblock %}

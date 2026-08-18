@@ -24,10 +24,10 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** import sample ~800-like file; contact cell parses; groups by Investor; dedup flags matches; pages render. ✅ Verified end-to-end with test data.
 
 ## Phase 2 — Call day
-- [ ] Dedicated `/today` view: leads minus hard matches, region -> oldest
-- [~] One-tap outcome logging + callback due_date reminders (works on lead detail page; port to Today)
-- [ ] Pipeline status transitions (partially done via outcome map)
-- **Acceptance:** call a test lead, log outcome, callback reappears on date.
+- [x] Dedicated `/today` view: leads minus hard matches, region -> oldest
+- [x] One-tap outcome logging + callback due_date reminders
+- [x] Pipeline status transitions
+- **Acceptance:** call a test lead, log outcome, callback reappears on date. ✅ Verified (appointment removes from queue; callback creates due activity).
 
 ## Phase 3 — Map
 - [ ] `/map` dots-only view (Leaflet + OSM)

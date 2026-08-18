@@ -100,6 +100,14 @@ def _company_id(db, name, region, source):
     return cur.lastrowid
 
 
+def _lead_exists(db, cid, region, source_label):
+    """True when a lead already exists for this company+region+source (idempotency)."""
+    return db.execute(
+        "SELECT id FROM leads WHERE company_id = ? AND region IS ? AND source IS ?",
+        (cid, region, source_label),
+    ).fetchone() is not None
+
+
 def import_lead_csv(raw, source_label="", lead_source="imported"):
     """Import a dealer-layout CSV.
 
@@ -161,25 +169,40 @@ def import_lead_csv(raw, source_label="", lead_source="imported"):
                 stats["companies_created"] += 1
 
             if address or city or plz or region:
-                cur = db.execute(
-                    "INSERT INTO locations (company_id, address, city, plz, phone) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (cid, address, city, plz, c_phone or None),
-                )
-                stats["locations_created"] += 1
+                dup_loc = db.execute(
+                    "SELECT id FROM locations WHERE company_id = ? AND address IS ? AND plz IS ?",
+                    (cid, address or None, plz or None),
+                ).fetchone()
+                if dup_loc is None:
+                    db.execute(
+                        "INSERT INTO locations (company_id, address, city, plz, phone) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (cid, address, city, plz, c_phone or None),
+                    )
+                    stats["locations_created"] += 1
 
             if c_name or c_email or c_phone:
-                cur = db.execute(
-                    "INSERT INTO contacts (company_id, name, email, phone) VALUES (?, ?, ?, ?)",
-                    (cid, c_name or None, c_email or None, c_phone or None),
-                )
-                stats["contacts_created"] += 1
+                dup_contact = db.execute(
+                    "SELECT id FROM contacts WHERE company_id = ? AND email IS ?",
+                    (cid, c_email or None),
+                ).fetchone()
+                if dup_contact is None:
+                    db.execute(
+                        "INSERT INTO contacts (company_id, name, email, phone) VALUES (?, ?, ?, ?)",
+                        (cid, c_name or None, c_email or None, c_phone or None),
+                    )
+                    stats["contacts_created"] += 1
 
-            cur = db.execute(
-                "INSERT INTO leads (company_id, source, region, status) VALUES (?, ?, ?, 'new')",
-                (cid, lead_source or source_label or None, region),
-            )
-            stats["leads_created"] += 1
+            if not _lead_exists(db, cid, region, lead_source or source_label or None):
+                cur = db.execute(
+                    "INSERT INTO leads (company_id, source, region, status) VALUES (?, ?, ?, 'new')",
+                    (cid, lead_source or source_label or None, region),
+                )
+                stats["leads_created"] += 1
+            else:
+                stats["errors"].append(
+                    f"Row {i}: lead already exists for {company_name} in this source, skipped."
+                )
         except Exception as e:  # noqa: BLE001 - keep importing the rest
             stats["errors"].append(f"Row {i}: {e}")
 

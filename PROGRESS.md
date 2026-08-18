@@ -4,28 +4,31 @@
 > Updated at the end of every working session. **Any agent: read this file first.**
 
 ## Current state
-**Phase 1 complete and verified.** Phase 0 complete. Phase 2 (Today queue polish) next.
+**Phase 2 complete and verified.** Phase 0, 1, 2 done. Phase 3 (Map live test) next.
 
 ## What is done
 - Phase 0 fully: repo cloned, git identity set, MAPTOOL3 heritage copied to `app/map/heritage/`, docs written, scaffold pushed.
-- Phase 1 fully: Flask app skeleton (factory + 6 blueprints), DB schema + settings seed, importer (dealer layout, contact-cell regex parser, latin-1/UTF-8 autodetect, Investor grouping), matching engine (hard/probable/soft), import UI with preview, match review, lead list + detail + outcome logging. Visual identity theme.css + base templates.
-- **Verified end-to-end:** imported a 7-row test leads CSV + 4-row blocklist; importer grouped 7 rows -> 5 companies / 7 locations / 5 contacts / 7 leads; matcher produced hard(6)/probable(5)/soft(4) with correct rules; all pages return 200; outcome POST creates activity with due_date and flips lead status to callback. DB reset to clean state after tests.
+- Phase 1 fully: Flask app skeleton (factory + 6 blueprints), DB schema + settings seed, importer (dealer layout, contact-cell regex parser, latin-1/UTF-8 autodetect, **idempotent** Investor grouping), matching engine (hard/probable/soft), import UI with preview, match review, lead list + detail + outcome logging. Visual identity theme.css + base templates.
+- Phase 2 fully: dedicated **Today queue** (`/today`): callbacks due (activity due_date <= today) + fresh queue (status new/called/no_answer/voicemail, hard matches excluded), region->oldest. Outcome logging flips lead status (callback/appointment/won/lost/not_interested/called). Verified: appointment logs and removes lead from queue; callback creates due_date activity.
 
 ## Where we stopped
-- After verifying Phase 1. Test CSVs remain at `data/test/test_leads.csv` and `data/test/test_blocklist.csv` for reuse. DB was wiped of test data (schema intact).
+- After verifying Phase 2. DB reset to clean state after each test. Test CSVs at `samples/sample_leads.csv` + `samples/sample_blocklist.csv`.
 
 ## What is next (in order)
-1. **Phase 2 — Today queue** (dedicated `/today` view: leads minus hard matches, sorted region -> oldest, one-tap outcomes, callbacks reappearing on due_date). Core logging already exists on the lead detail page.
-2. Phase 3 — Map: dots-only confirmed working; geocode + isochrones implemented, needs live API test.
-3. Phase 4 — Gmail OAuth + reply poller.
-4. Phase 5 — Reporting polish + EOD export (basic version exists).
-5. Phase 6 — Import real CSVs (~800, ~250) once provided by user.
-6. Phase 7 — Docs freeze.
+1. Phase 3 — Map: code complete (dots-only + geocode + rate-safe isochrones); needs live test. No ORS key set -> runs dots-only.
+2. Phase 4 — Gmail OAuth + reply poller.
+3. Phase 5 — Reporting polish + EOD export (basic version exists).
+4. Phase 6 — Import real CSVs (~800, ~250) once provided by user.
+5. Phase 7 — Docs freeze.
 
 ## Blockers
-- None. Tested with local test data.
-- Pending from user (not blocking): real CSVs (~800, ~250); ORS API key for isochrones; Google Cloud project for Gmail (Phase 4).
-- GitHub push needs credential prompt once (repo is public, read-only works).
+- **GitHub push pending user auth** (see below).
+- Pending from user (not blocking): real CSVs (~800, ~250); ORS API key; Google Cloud project for Gmail (Phase 4).
+
+## GitHub push status
+- Repo public; local commits ahead of origin/main (Phase 0-1 and Phase 2).
+- `git push` hangs in this environment: Windows credential helper opens an interactive/GUI prompt that blocks a headless session. `credential.helper` set to `wincred` locally; stored `gh:github.com:CPCONSULT18` creds exist but may not cover git-over-https.
+- **User can push with:** `cd C:\Users\Lenovo\Desktop\LEADFLOW && git push origin main` in their terminal, or provide a PAT / run `gh auth login`.
 
 ## Key decisions (for continuity)
 - No separate `tasks` table: reminders are `activities` with `due_date` + status.
