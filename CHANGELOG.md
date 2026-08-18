@@ -2,6 +2,9 @@
 
 All notable changes to this project, dated.
 
+## [0.5.1] — 2026-08-18
+- **Phase 7 (docs freeze) complete.** PROGRESS.md cleaned (removed duplicated stale sections), push status reflects data-load commit, deferred items listed under "Deferred (see blueprint §15)". PHASES.md marks Phases 6 and 7 done.
+
 ## [0.5.0] — 2026-08-18
 - **Phase 6 (data load) complete — all real CSVs imported.**
 - New `responsible` field on `leads` (schema + migration), populated from the `Responsible` column of `OriginalG.csv` (Lei/Willy/Erik/Jan/Thomas/Maike/Christian/Philipp). Shown on leads list, lead detail, and leads CSV export.

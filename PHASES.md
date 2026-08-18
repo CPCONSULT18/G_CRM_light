@@ -53,8 +53,8 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** counts match source, no data loss. ✅ Imported: 1027 companies, 1054 leads, 1103 locations, 975 contacts; 0 duplicate leads; `responsible` shown on leads list/detail/export.
 
 ## Phase 7 — Docs freeze
-- [ ] Final changelog, PROGRESS handoff, README polish
-- **Acceptance:** `PROGRESS.md` fully describes state for next agent.
+- [x] Final changelog, PROGRESS handoff, README polish
+- **Acceptance:** `PROGRESS.md` fully describes state for next agent. ✅ Done — docs reflect all phases; deferred items tracked in PROGRESS/PHASES.
 
 ## Deferred (see blueprint §15) — do NOT miss
 - [ ] Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.

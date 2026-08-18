@@ -27,17 +27,17 @@
 - Encoding note: OriginalG.csv is latin-1 (umlauts decode correctly); other files are UTF-8 with BOM.
 
 ## Where we stopped
-- Phase 6 imported and verified. Remaining: Phase 4 live Gmail test (needs Google Cloud creds), Phase 7 docs freeze.
+- Phase 6 imported and verified; Phase 7 (docs freeze) done. Remaining: Phase 4 live Gmail test (needs Google Cloud creds), then any future/roadmap work.
 
 ## What is next (in order)
 1. **Phase 4 live**: user creates Google Cloud OAuth client (Desktop app, scope gmail.readonly), pastes Client ID/Secret in Settings -> Connect -> Poll. Steps documented in README/blueprint §8.
-2. Phase 7 — Docs freeze (this file + CHANGELOG + PHASES finalized).
+2. Roadmap — deferred items (blueprint §15): acquisition pipeline tracking, isochrone-based blocking.
 
 ## Blockers
 - Gmail live test needs Google Cloud OAuth client (user action).
 
 ## GitHub push status
-- Local commits ahead of origin/main (Phases 0-1, 2, rich-layout, docs+geocode-test, isochrones fix, reporting, gmail). User handles pushes.
+- Local commits ahead of origin/main (Phases 0-1, 2, rich-layout, docs+geocode-test, isochrones fix, reporting, gmail, data load). User handles pushes.
 
 ## Key decisions (for continuity)
 - No separate `tasks` table: reminders are `activities` with `due_date` + status.
@@ -49,13 +49,9 @@
 - `responsible` (owner) comes from the `Responsible` column of OriginalG.csv only; research files leave it empty.
 - `OriginalG.csv` is the "other" master file (not the user's research); research files carry region-specific source labels.
 
-## Blockers
-- None currently.
-- Pending from user (not blocking): real CSVs (~800, ~250) for Phase 6; ORS API key for isochrones (dots-only until provided); Google Cloud project for Gmail (Phase 4).
-- `git ls-remote`/push may prompt for credentials once; user confirmed repo is public.
+## Deferred (see blueprint §15) — do NOT miss
+- Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.
+- Blocked leads via isochrones: build our OWN blocklist from the map — flag leads outside our driving-time operating range (ORS 20/30-min isochrones) as `blocked`; threshold setting in Settings; blocked status already excluded from Today.
 
-## Key decisions (for continuity)
-- No separate `tasks` table: reminders are `activities` with `due_date` + status.
-- Contact at Dealer is ONE cell -> regex extraction (email, phone, remainder = name).
-- Data stays local; blocklist + lead CSV layout is the dealer layout in blueprint §5.
-- Accent color `#C5B358` reserved for high-impact CTAs/underlines/badges only.
+## Future ideas
+- (none recorded yet)
