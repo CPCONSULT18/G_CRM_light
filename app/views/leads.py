@@ -1,15 +1,14 @@
-from flask import redirect, render_template, request, url_for
+from flask import Response, redirect, render_template, request, url_for
 
 from ..db import get_db
 from . import leads_bp
 
 
-@leads_bp.route("/leads")
-def list_leads():
-    db = get_db()
-    region = request.args.get("region", "").strip()
-    status = request.args.get("status", "").strip()
-    match_filter = request.args.get("match", "").strip()  # hard|probable|soft|clear
+def _lead_query(filters):
+    """Shared lead query builder; returns (sql, params) for list + export."""
+    region = filters.get("region", "")
+    status = filters.get("status", "")
+    match_filter = filters.get("match", "")
 
     sql = """
         SELECT l.id, l.source, l.region, l.qual_score, l.status, l.created_at,
@@ -39,7 +38,18 @@ def list_leads():
     if conds:
         sql += " WHERE " + " AND ".join(conds)
     sql += " ORDER BY c.name, l.created_at"
+    return sql, params
 
+
+@leads_bp.route("/leads")
+def list_leads():
+    db = get_db()
+    filters = {
+        "region": request.args.get("region", "").strip(),
+        "status": request.args.get("status", "").strip(),
+        "match": request.args.get("match", "").strip(),
+    }
+    sql, params = _lead_query(filters)
     leads = db.execute(sql, params).fetchall()
 
     regions = db.execute(
@@ -50,7 +60,7 @@ def list_leads():
         "leads.html",
         leads=leads,
         regions=[r["region"] for r in regions],
-        filters={"region": region, "status": status, "match": match_filter},
+        filters=filters,
     )
 
 
@@ -128,3 +138,43 @@ def log_outcome(lead_id):
         )
     db.commit()
     return redirect(url_for("leads.lead_detail", lead_id=lead_id))
+
+
+@leads_bp.route("/leads/export")
+def export_leads():
+    import csv
+    import io
+
+    db = get_db()
+    filters = {
+        "region": request.args.get("region", "").strip(),
+        "status": request.args.get("status", "").strip(),
+        "match": request.args.get("match", "").strip(),
+    }
+    sql, params = _lead_query(filters)
+    rows = db.execute(sql, params).fetchall()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(
+        ["company", "region", "status", "source", "matches", "contacts", "locations", "created"]
+    )
+    for r in rows:
+        writer.writerow(
+            [
+                r["company_name"],
+                r["region"] or "",
+                r["status"],
+                r["source"] or "",
+                r["match_confs"] or "",
+                r["n_contacts"],
+                r["n_locations"],
+                (r["created_at"] or "")[:10],
+            ]
+        )
+
+    return Response(
+        "\ufeff" + buf.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=leads.csv"},
+    )

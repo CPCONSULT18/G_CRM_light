@@ -21,6 +21,8 @@
   <button type="submit" class="btn">Filter</button>
 </form>
 
+<p class="small muted mb"><a href="{{ url_for('leads.export_leads', region=filters.region, status=filters.status, match=filters.match) }}">Export current list (CSV)</a></p>
+
 {% if leads %}
 <table>
   <tr>

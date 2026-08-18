@@ -2,6 +2,13 @@
 
 All notable changes to this project, dated.
 
+## [0.3.4] — 2026-08-18
+- **Phase 5 (Reporting) complete.**
+- Reports page: added Today summary badges (calls, appointments, not-interested, callbacks, won).
+- EOD export (`/reports/export/today`): now semicolon-delimited + UTF-8 BOM for German Excel / SharePoint paste.
+- New leads CSV export (`/leads/export`) honoring current filters (region/status/match); export link on the leads list.
+- Verified end-to-end: reports 200 with badges; EOD export BOM + `;` rows; leads export 6 rows, filtered export 1 row; leads page 200 with export link.
+
 ## [0.3.3] — 2026-08-18
 - **Live-tested ORS isochrones** (`/map/isochrones`): new ORS API key works; fetched 20-min (1200s) + 30-min (1800s) isochrones for the München test location; `/map/locations` serves iso_json; second run skips cached (instant).
 - Fixed bug: isochrone loop read stale in-memory `iso_json`, so the 20-min pass overwrote the 30-min cache. Now re-reads rows from DB per pass; both caches persist.

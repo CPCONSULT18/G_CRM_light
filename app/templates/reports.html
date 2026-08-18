@@ -4,6 +4,14 @@
 <h1>Reports</h1>
 <p class="mb"><a class="btn" href="{{ url_for('reports.export_today') }}">Export today's outcomes (CSV)</a></p>
 
+<div class="flex mb">
+  <span class="badge">Calls today: {{ today_stats.calls or 0 }}</span>
+  <span class="badge probable">Appointments: {{ today_stats.appts or 0 }}</span>
+  <span class="badge">Not interested: {{ today_stats.not_int or 0 }}</span>
+  <span class="badge">Callbacks set: {{ today_stats.callbacks or 0 }}</span>
+  {% if today_stats.won %}<span class="badge ok">Won: {{ today_stats.won }}</span>{% endif %}
+</div>
+
 <div class="grid-2">
   <div>
     <h2>Pipeline</h2>

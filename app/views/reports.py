@@ -11,6 +11,21 @@ from . import reports_bp
 def reports_page():
     db = get_db()
 
+    today = db.execute("SELECT date('now') d").fetchone()["d"]
+
+    today_stats = db.execute(
+        """
+        SELECT COUNT(*) AS calls,
+               SUM(CASE WHEN outcome='appointment_booked' THEN 1 ELSE 0 END) AS appts,
+               SUM(CASE WHEN outcome='not_interested' THEN 1 ELSE 0 END) AS not_int,
+               SUM(CASE WHEN outcome='callback' THEN 1 ELSE 0 END) AS callbacks,
+               SUM(CASE WHEN outcome='won' THEN 1 ELSE 0 END) AS won
+        FROM activities
+        WHERE type='call' AND date(occurred_at) = ?
+        """,
+        (today,),
+    ).fetchone()
+
     by_day = db.execute(
         """
         SELECT date(occurred_at) AS day, type,
@@ -56,6 +71,8 @@ def reports_page():
 
     return render_template(
         "reports.html",
+        today=today,
+        today_stats=today_stats,
         by_day=by_day,
         by_region=by_region,
         pipeline=pipeline,
@@ -79,7 +96,7 @@ def export_today():
     ).fetchall()
 
     buf = io.StringIO()
-    writer = csv.writer(buf)
+    writer = csv.writer(buf, delimiter=";")
     writer.writerow(["date", "type", "outcome", "company", "region", "notes"])
     for r in rows:
         writer.writerow(
@@ -87,7 +104,7 @@ def export_today():
         )
 
     return Response(
-        buf.getvalue(),
-        mimetype="text/csv",
+        "\ufeff" + buf.getvalue(),
+        mimetype="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=today_outcomes.csv"},
     )

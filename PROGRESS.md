@@ -4,33 +4,30 @@
 > Updated at the end of every working session. **Any agent: read this file first.**
 
 ## Current state
-**Phase 3 (Map) COMPLETE — all three sub-features live-tested.** Phases 0-2 complete.
+**Phase 5 (Reporting) complete and verified.** Phases 0, 1, 2, 3, 5 done. Phase 4 (Gmail) and 6 (data load) pending.
 
 ## What is done
 - Phase 0 fully: repo cloned, git identity set, MAPTOOL3 heritage copied to `app/map/heritage/`, docs written, scaffold pushed.
 - Phase 1 fully: Flask app skeleton (factory + 6 blueprints), DB schema + settings seed, importer (dealer layout, contact-cell regex parser, latin-1/UTF-8 autodetect, **idempotent** Investor grouping), matching engine (hard/probable/soft), import UI with preview, match review, lead list + detail + outcome logging. Visual identity theme.css + base templates.
-- Phase 2 fully: dedicated **Today queue** (`/today`): callbacks due (activity due_date <= today) + fresh queue (status new/called/no_answer/voicemail, hard matches excluded), region->oldest. Outcome logging flips lead status (callback/appointment/won/lost/not_interested/called). Verified: appointment logs and removes lead from queue; callback creates due_date activity.
-- **Rich SharePoint export layout supported** (importer): 38-column tab-separated files import cleanly; `Blocked by signed dealer?` column value `Block` sets lead status `blocked` (excluded from Today queue). Verified with a real export row, marked source `test`.
-- **Phase 3 (Map) verified live:**
-  - Dots-only view: `/map` + `/map/locations` markers with popups.
-  - Geocoding (`/map/geocode`): Nominatim address -> PLZ fallback, 1.1s delay, 429 handling. Verified München address + PLZ-only fallback.
-  - **Isochrones (`/map/isochrones`): ORS v2, 20-min + 30-min driving-car, DB cache in `iso_json`, rate-safe batches. Verified live with working ORS key: both iso caches persist, second run skips cached instantly. Fixed stale-cache bug (20-min overwrote 30-min).**
+- Phase 2 fully: dedicated **Today queue** (`/today`): callbacks due (activity due_date <= today) + fresh queue (status new/called/no_answer/voicemail, hard matches excluded), region->oldest. Outcome logging flips lead status (callback/appointment/won/lost/not_interested/called). Verified.
+- **Rich SharePoint export layout supported** (importer): 38-column tab-separated files import cleanly; `Blocked by signed dealer?` = `Block` sets lead status `blocked` (excluded from Today). Verified.
+- **Phase 3 (Map) verified live**: dots-only + geocoding (Nominatim, PLZ fallback) + isochrones (ORS v2, 20/30-min, DB cache). Fixed stale-cache bug. ORS key stored locally.
+- **Phase 5 (Reporting) complete**: Today summary badges; activity by day + by region; pipeline counts; callbacks due list; EOD export (`;` + BOM for German Excel/SharePoint); leads CSV export honoring filters. Verified end-to-end.
 
 ## Where we stopped
-- Phase 3 complete. DB reset to clean state after tests. ORS key stored locally in Settings (never committed).
+- Phase 5 verified. DB reset to clean state after tests. ORS key stored locally in Settings (never committed).
 
 ## What is next (in order)
 1. Phase 4 — Gmail OAuth + reply poller (needs Google Cloud project; deferred).
-2. Phase 5 — Reporting polish + EOD export (basic version exists).
-3. Phase 6 — Import real CSVs (~800, ~250) once provided by user.
-4. Phase 7 — Docs freeze.
+2. Phase 6 — Import real CSVs (~800, ~250) once provided by user.
+3. Phase 7 — Docs freeze.
 
 ## Blockers
-- None for core. ORS key now configured and verified.
+- None for core. ORS key configured and verified.
 - Pending from user (not blocking): real CSVs (~800, ~250); Google Cloud project for Gmail (Phase 4).
 
 ## GitHub push status
-- Local commits ahead of origin/main (Phases 0-1, 2, rich-layout, docs+geocode-test, isochrones fix). User handles pushes.
+- Local commits ahead of origin/main (Phases 0-1, 2, rich-layout, docs+geocode-test, isochrones fix, reporting). User handles pushes.
 
 ## Key decisions (for continuity)
 - No separate `tasks` table: reminders are `activities` with `due_date` + status.

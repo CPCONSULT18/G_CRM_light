@@ -41,9 +41,10 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** reply to test email surfaces on lead.
 
 ## Phase 5 — Reporting
-- [ ] Daily/region outcome reports + pipeline counts + callback due list
-- [ ] EOD export to shared-Excel layout
-- **Acceptance:** report numbers match logged activities.
+- [x] Daily/region outcome reports + pipeline counts + callback due list + Today summary
+- [x] EOD export (semicolon + BOM, German Excel / SharePoint friendly)
+- [x] CSV export on any list (leads, honoring filters)
+- **Acceptance:** report numbers match logged activities. ✅ Verified (badges, exports with BOM + `;`).
 
 ## Phase 6 — Data load
 - [ ] Import ~800 + ~250 real CSVs, run dedup, verify counts, snapshot
