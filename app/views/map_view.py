@@ -160,16 +160,18 @@ def isochrones():
 
     for sec, label in ((1800, "30-min"), (1200, "20-min")):
         todo = []
-        for loc in locations:
+        for loc in db.execute(
+            "SELECT id, lat, lng, iso_json FROM locations "
+            "WHERE lat IS NOT NULL AND lng IS NOT NULL"
+        ).fetchall():
             cached = json.loads(loc["iso_json"]) if loc["iso_json"] else {}
             if cached.get(label):
                 continue  # cached, skip
-            todo.append(loc)
+            todo.append((loc, cached))
         for i in range(0, len(todo), ORS_BATCH_SIZE):
             batch = todo[i : i + ORS_BATCH_SIZE]
-            for loc in batch:
+            for loc, cached in batch:
                 feature = fetch_iso(loc["lat"], loc["lng"], sec, key)
-                cached = json.loads(loc["iso_json"]) if loc["iso_json"] else {}
                 if feature is not None:
                     cached[label] = feature
                 db.execute(

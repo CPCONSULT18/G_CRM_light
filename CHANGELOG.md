@@ -2,6 +2,11 @@
 
 All notable changes to this project, dated.
 
+## [0.3.3] — 2026-08-18
+- **Live-tested ORS isochrones** (`/map/isochrones`): new ORS API key works; fetched 20-min (1200s) + 30-min (1800s) isochrones for the München test location; `/map/locations` serves iso_json; second run skips cached (instant).
+- Fixed bug: isochrone loop read stale in-memory `iso_json`, so the 20-min pass overwrote the 30-min cache. Now re-reads rows from DB per pass; both caches persist.
+- (Note: first ORS key returned `403 Access to this API has been disallowed` on all services — account-level setting, resolved by user generating a new key.)
+
 ## [0.3.2] — 2026-08-18
 - Blueprint §5a + §15: documented rich SharePoint export layout (38 cols) and deferred features — acquisition pipeline tracking (37 step-date columns) and **blocked leads via isochrones** (build our own blocklist from driving-time map range). Added matching PHASES.md section.
 - **Live-tested geocoding** (`/map/geocode`, Nominatim): `Lindwurmstrasse 22-24, 80337 München` -> 48.1315, 11.5627 (`ok`); PLZ fallback `10115` -> 52.532, 13.384; markers endpoint returns geocoded points; `/map` renders 200. DB cleaned after test.

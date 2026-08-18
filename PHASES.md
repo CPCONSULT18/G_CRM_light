@@ -30,10 +30,10 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** call a test lead, log outcome, callback reappears on date. ✅ Verified (appointment removes from queue; callback creates due activity).
 
 ## Phase 3 — Map
-- [x] `/map` dots-only view (Leaflet + OSM)
+- [x] `/map` dots-only view (Leaflet + OSM) — ✅ live-tested
 - [x] Geocode action (Nominatim, PLZ fallback) — ✅ live-tested
-- [~] ORS isochrones (rate-safe, DB cache, quota status line) — code done, needs ORS key to test
-- **Acceptance:** upload sample, geocode empties, trigger rate-limited isochrone run.
+- [x] ORS isochrones (rate-safe, DB cache, quota status line) — ✅ live-tested; fixed stale-cache bug
+- **Acceptance:** upload sample, geocode empties, trigger rate-limited isochrone run. ✅ All three verified live.
 
 ## Phase 4 — Gmail (deferred)
 - [ ] OAuth client flow (gmail.readonly)
