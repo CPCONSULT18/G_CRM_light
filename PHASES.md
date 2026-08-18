@@ -30,9 +30,9 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** call a test lead, log outcome, callback reappears on date. ✅ Verified (appointment removes from queue; callback creates due activity).
 
 ## Phase 3 — Map
-- [ ] `/map` dots-only view (Leaflet + OSM)
-- [ ] Geocode action (Nominatim, PLZ fallback)
-- [ ] ORS isochrones (rate-safe, DB cache, quota status line)
+- [x] `/map` dots-only view (Leaflet + OSM)
+- [x] Geocode action (Nominatim, PLZ fallback) — ✅ live-tested
+- [~] ORS isochrones (rate-safe, DB cache, quota status line) — code done, needs ORS key to test
 - **Acceptance:** upload sample, geocode empties, trigger rate-limited isochrone run.
 
 ## Phase 4 — Gmail (deferred)
@@ -52,3 +52,7 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 ## Phase 7 — Docs freeze
 - [ ] Final changelog, PROGRESS handoff, README polish
 - **Acceptance:** `PROGRESS.md` fully describes state for next agent.
+
+## Deferred (see blueprint §15) — do NOT miss
+- [ ] Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.
+- [ ] Blocked leads via isochrones: build our OWN blocklist from the map — flag leads outside our driving-time operating range (ORS 20/30-min isochrones) as `blocked`; threshold setting in Settings; blocked status already excluded from Today.

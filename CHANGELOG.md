@@ -2,6 +2,10 @@
 
 All notable changes to this project, dated.
 
+## [0.3.2] — 2026-08-18
+- Blueprint §5a + §15: documented rich SharePoint export layout (38 cols) and deferred features — acquisition pipeline tracking (37 step-date columns) and **blocked leads via isochrones** (build our own blocklist from driving-time map range). Added matching PHASES.md section.
+- **Live-tested geocoding** (`/map/geocode`, Nominatim): `Lindwurmstrasse 22-24, 80337 München` -> 48.1315, 11.5627 (`ok`); PLZ fallback `10115` -> 52.532, 13.384; markers endpoint returns geocoded points; `/map` renders 200. DB cleaned after test.
+
 ## [0.3.1] — 2026-08-18
 - Importer: handle the **rich SharePoint export layout** (38 columns, tab-separated): maps `Metro Area/State`, `Investor (Group)`, `Dealer Location Street`, `Dealer Location ZIP Code`, `Contact at Dealer (Name, Mail, Phone)`.
 - New `Blocked by signed dealer?` column: `Block` sets lead status to `blocked`, keeping it out of the Today call queue.

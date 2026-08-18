@@ -48,6 +48,12 @@ One row per lead. Headers (with intentional empty columns):
 - Same importer for the ~800 and ~250 files (same headers) - two import runs.
 - Auto column-map + preview + confirm; saved mapping = one-click re-import; latin-1/UTF-8 auto-detect; idempotent; duplicate Investor (Group) rows auto-group into one company.
 
+### 5a. Rich SharePoint export layout (supported import format)
+Real exports are the **38-column tab-separated** sheet, not just the 11-column dealer layout. Headers include:
+`Responsible; Metro Area/State; City; City Rank; Top City Population; Investor (Group); Dealer Location Street; Dealer Location ZIP Code; Blocked by signed dealer?; Contact at Dealer (Name, Mail, Phone); Last Status; Entrypoint; Status; Sales & Service?; Acquisition Status; Acquisition Progress; [01..21 acquisition step dates]`
+
+Currently imported (verified with real row): region, city, company, street, ZIP, contact cell, and `Blocked by signed dealer?` (value `Block` -> lead status `blocked`, excluded from Today). **Everything else is ignored for now - see deferred features §15.**
+
 ## 6. Matching engine
 Normalize (email lower; phone->E.164 +country; domain->base; name->strip legal forms) vs `contacted`:
 - **Hard:** email 1:1 exact; phone + name both
@@ -82,3 +88,18 @@ Import ~800 + ~250 CSVs, run dedup, verify counts, snapshot before/after.
 
 ## 14. Phases
 See `PHASES.md` for the full checklist. Summary: 0 Repo/scaffold/docs, 1 Schema+importers+matching, 2 Today queue+reminders, 3 Map, 4 Gmail, 5 Reporting, 6 Data load, 7 Docs freeze.
+
+## 15. Deferred features (do NOT miss - revisit after core phases)
+These were intentionally scoped out to avoid feature creep, but are explicit future work. Track here, not in code.
+
+### 15.1 Acquisition pipeline tracking
+The rich export carries the full GAD dealer-acquisition pipeline as **37 date columns** (steps `01. First contact` ... `21. Signed contract distributed`, plus `LOI signed`, `Consors Quick Check Date`, etc.) plus `Last Status`, `Entrypoint`, `Status`, `Sales & Service?`, `Acquisition Status`, `Acquisition Progress`.
+- Later goal: persist these per-company/lead so pipeline history survives re-exports (not just the current `Status`), show progress in the UI, and drive reporting.
+- Proposed storage: a `pipeline_events` table (company_id, step, step_date, progress) or a JSON column on `companies`/`leads`; import step dates during CSV parse; dedupe on re-import.
+- Not yet implemented. Keep the real export safe - test file at `data/test/test_rich_export.tsv` (gitignored).
+
+### 15.2 Blocked leads via isochrones (build our own blocklist from the map)
+The `Blocked by signed dealer?` column only covers dealers already signed by the company. The real "do not call" list should be **ours, derived from the map**: mark leads blocked/unreachable based on **driving-time isochrones** (e.g. > X minutes from us on the ORS 20/30-min maps).
+- Idea: from the `/map` view, select isochrones that represent our operating range; leads whose locations fall outside (or beyond a chosen threshold) get flagged `blocked` automatically - our own version of the blocklist, self-maintained, not dependent on the export column.
+- Later goal: a "block by isochrone" action on the map + a threshold setting in Settings; blocked leads excluded from Today (already wired: status `blocked` is filtered out).
+- Not yet implemented. This is why the importer sets `blocked` from the export column today - same status feeds the same exclusion.
