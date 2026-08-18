@@ -40,6 +40,51 @@
 </table>
 {% else %}<p class="muted">No locations.</p>{% endif %}
 
+<h2>Acquisition</h2>
+<form method="post" action="{{ url_for('leads.update_acquisition', lead_id=lead.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid-2">
+    <div>
+      <label>Entrypoint</label>
+      <input type="text" name="entrypoint" value="{{ lead.entrypoint or '' }}">
+    </div>
+    <div>
+      <label>Status</label>
+      <input type="text" name="gad_status" value="{{ lead.gad_status or '' }}">
+    </div>
+    <div>
+      <label>Sales &amp; Service?</label>
+      <input type="text" name="sales_service" value="{{ lead.sales_service or '' }}">
+    </div>
+    <div>
+      <label>Acquisition Progress</label>
+      <input type="text" name="acquisition_progress" value="{{ lead.acquisition_progress or '' }}">
+    </div>
+    <div>
+      <label>Acquisition Status</label>
+      <input type="text" name="acquisition_status" value="{{ lead.acquisition_status or '' }}">
+    </div>
+  </div>
+  <div class="mt">
+    <label>Last Status</label>
+    <textarea name="last_status" rows="2" placeholder="Free-text status note…">{{ lead.last_status or '' }}</textarea>
+  </div>
+
+  <h3>Pipeline steps</h3>
+  <table>
+    <tr><th>Step</th><th>Date</th></tr>
+    {% for step_key, step_label in pipeline_steps %}
+    <tr>
+      <td>{{ step_label }}</td>
+      <td>
+        <input type="date" name="step_{{ step_key }}" value="{{ pipeline.get(step_key) or '' }}">
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="mt"><button type="submit" class="btn primary">Save acquisition</button></p>
+</form>
+
 <h2>Log outcome</h2>
 <form method="post" action="{{ url_for('leads.log_outcome', lead_id=lead.id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -2,7 +2,32 @@
 {% block title %}Reports — LeadFlow{% endblock %}
 {% block content %}
 <h1>Reports</h1>
-<p class="mb"><a class="btn" href="{{ url_for('reports.export_today') }}">Export today's outcomes (CSV)</a></p>
+<p class="mb">
+  <a class="btn" href="{{ url_for('reports.build_report') }}">New report</a>
+  <a class="btn" href="{{ url_for('reports.build_dashboard') }}">New dashboard</a>
+  <a class="btn" href="{{ url_for('reports.export_today') }}">Export today's outcomes (CSV)</a>
+</p>
+
+{% if saved %}
+<h2>My reports &amp; dashboards</h2>
+<table>
+  <tr><th>Name</th><th>Kind</th><th>Updated</th><th></th></tr>
+  {% for r in saved %}
+  <tr>
+    <td><a href="{{ url_for('reports.view_report', report_id=r.id) }}">{{ r.name }}</a></td>
+    <td>{{ r.kind }}</td>
+    <td>{{ (r.updated_at or '')[:10] }}</td>
+    <td>
+      {% if r.kind == 'report' %}<a class="small" href="{{ url_for('reports.export_report', report_id=r.id) }}">CSV</a>{% endif %}
+      <form method="post" action="{{ url_for('reports.delete_report', report_id=r.id) }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn small">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
 
 <div class="flex mb">
   <span class="badge">Calls today: {{ today_stats.calls or 0 }}</span>

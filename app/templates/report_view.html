@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ report.name }} — LeadFlow{% endblock %}
+{% block content %}
+<p class="small muted"><a href="{{ url_for('reports.reports_page') }}">← Reports</a></p>
+<h1>{{ report.name }}</h1>
+<p class="small muted">
+  Source: {{ result.source if result else '—' }} · Metric: {{ result.metric if result else '—' }} · {{ report.kind }}
+  {% if result and result.dim %} · grouped by {{ result.dim }}{% endif %}
+  · <a href="{{ url_for('reports.export_report', report_id=report.id) }}">Export CSV</a>
+</p>
+
+{% if error %}<div class="flash">{{ error }}</div>{% endif %}
+
+{% if result %}
+  {% if result.is_number %}
+  <p class="big-number">{{ result.total }}</p>
+  <p class="muted">Total for {{ result.metric }}</p>
+  {% else %}
+  <div class="card"><canvas id="reportChart" height="300"></canvas></div>
+
+  <h2>Summary</h2>
+  <table>
+    <tr><th>{{ result.dim or 'Label' }}</th><th>{{ result.metric }}</th></tr>
+    {% for r in result.rows %}
+    <tr><td>{{ r.label }}</td><td>{{ r.value }}</td></tr>
+    {% endfor %}
+    <tr class="total-row"><th>Total</th><th>{{ result.total }}</th></tr>
+  </table>
+  {% endif %}
+{% else %}
+<p class="muted">No data.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if result and not result.is_number %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+const ctx = document.getElementById('reportChart').getContext('2d');
+new Chart(ctx, {
+  type: {{ result.chart|tojson }},
+  data: {
+    labels: {{ result.labels|tojson }},
+    datasets: [{
+      data: {{ result.values|tojson }},
+      backgroundColor: ['#C5B358', '#8a8a85', '#5a5a55', '#3a3a38', '#6b6b66', '#a9a9a0'],
+      borderColor: '#1A1A1B'
+    }]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#F5F5F2' } } },
+    scales: {
+      x: { ticks: { color: '#F5F5F2' } },
+      y: { ticks: { color: '#F5F5F2' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

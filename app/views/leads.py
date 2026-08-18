@@ -105,6 +105,13 @@ def lead_detail(lead_id):
         "SELECT * FROM activities WHERE lead_id = ? ORDER BY occurred_at DESC, id DESC",
         (lead_id,),
     ).fetchall()
+    pipeline = {
+        p["step_key"]: p["step_date"]
+        for p in db.execute(
+            "SELECT step_key, step_date FROM pipeline_events WHERE lead_id = ?",
+            (lead_id,),
+        ).fetchall()
+    }
     matches = db.execute(
         """
         SELECT m.*, ct.name AS c_name, ct.email AS c_email, ct.phone AS c_phone
@@ -115,12 +122,16 @@ def lead_detail(lead_id):
         (lead_id,),
     ).fetchall()
 
+    from ..importer import PIPELINE_STEPS
+
     return render_template(
         "lead_detail.html",
         lead=lead,
         contacts=contacts,
         locations=locations,
         activities=activities,
+        pipeline=pipeline,
+        pipeline_steps=PIPELINE_STEPS,
         matches=matches,
     )
 
@@ -164,6 +175,54 @@ def log_outcome(lead_id):
         db.execute(
             "UPDATE leads SET status = ?, updated_at = datetime('now') WHERE id = ?",
             (new_status, lead_id),
+        )
+    db.commit()
+    return redirect(url_for("leads.lead_detail", lead_id=lead_id))
+
+
+@leads_bp.route("/leads/<int:lead_id>/acquisition", methods=["POST"])
+def update_acquisition(lead_id):
+    """Save acquisition summary fields + pipeline step dates for a lead."""
+    db = get_db()
+    vis_cond, vis_params = visibility_where("l")
+    where = "l.id = ?"
+    params = [lead_id]
+    if vis_cond:
+        where += f" AND {vis_cond}"
+        params += vis_params
+    owned = db.execute(
+        f"SELECT l.id FROM leads l WHERE {where}", params
+    ).fetchone()
+    if owned is None:
+        return "Lead not found", 404
+
+    from ..importer import PIPELINE_STEPS
+
+    def val(name):
+        return (request.form.get(name, "") or "").strip() or None
+
+    db.execute(
+        "UPDATE leads SET last_status = ?, entrypoint = ?, gad_status = ?, "
+        "sales_service = ?, acquisition_status = ?, acquisition_progress = ?, "
+        "updated_at = datetime('now') WHERE id = ?",
+        (
+            val("last_status"),
+            val("entrypoint"),
+            val("gad_status"),
+            val("sales_service"),
+            val("acquisition_status"),
+            val("acquisition_progress"),
+            lead_id,
+        ),
+    )
+
+    db.execute("DELETE FROM pipeline_events WHERE lead_id = ?", (lead_id,))
+    for step_key, step_label in PIPELINE_STEPS:
+        step_date = (request.form.get(f"step_{step_key}", "") or "").strip() or None
+        db.execute(
+            "INSERT INTO pipeline_events (lead_id, step_key, step_label, step_date) "
+            "VALUES (?, ?, ?, ?)",
+            (lead_id, step_key, step_label, step_date),
         )
     db.commit()
     return redirect(url_for("leads.lead_detail", lead_id=lead_id))

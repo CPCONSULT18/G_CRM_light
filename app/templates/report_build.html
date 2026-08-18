@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}New report — LeadFlow{% endblock %}
+{% block content %}
+<p class="small muted"><a href="{{ url_for('reports.reports_page') }}">← Reports</a></p>
+<h1>New report</h1>
+
+{% if error %}<div class="flash">{{ error }}</div>{% endif %}
+
+<form method="post" action="{{ url_for('reports.build_report') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="grid-2">
+    <div>
+      <label>Name</label>
+      <input type="text" name="name" value="{{ config.name if config else '' }}" required>
+    </div>
+    <div>
+      <label>Chart type</label>
+      <select name="chart">
+        {% for c in chart_types %}
+        <option value="{{ c }}" {% if config and config.chart == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Data source</label>
+      <select name="source">
+        {% for s in sources %}
+        <option value="{{ s }}" {% if config and config.source == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Group by (dimension)</label>
+      <select name="dimension">
+        <option value="">— (single number) —</option>
+        {% if config %}
+          {% for d in sources[config.source].dims if config.source %}
+          <option value="{{ d }}" {% if config.dimension == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+    <div>
+      <label>Metric</label>
+      <select name="metric">
+        {% if config and config.source %}
+          {% for m in sources[config.source].metrics %}
+          <option value="{{ m }}" {% if config.metric == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+    <div>
+      <label>Time field</label>
+      <select name="time_field">
+        <option value="">— (none) —</option>
+        {% if config and config.source %}
+          {% for t in sources[config.source].time_fields %}
+          <option value="{{ t }}" {% if config.time_field == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+    <div>
+      <label>Time preset</label>
+      <select name="time_preset">
+        {% for k, v in time_presets.items() %}
+        <option value="{{ k }}" {% if config and config.time_preset == k %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Custom from (YYYY-MM-DD)</label>
+      <input type="date" name="time_from" value="{{ config.time_from if config else '' }}">
+    </div>
+    <div>
+      <label>Custom to (YYYY-MM-DD)</label>
+      <input type="date" name="time_to" value="{{ config.time_to if config else '' }}">
+    </div>
+    <div>
+      <label>Max rows</label>
+      <input type="number" name="limit" value="{{ config.limit if config and config.limit else 50 }}" min="1" max="200">
+    </div>
+  </div>
+
+  <h3>Filters</h3>
+  <p class="small muted">Leave the value empty to remove a filter row.</p>
+  {% set f = config.filters if config and config.filters else [] %}
+  {% for i in range(0, 6) %}
+  <div class="flex">
+    <input type="text" name="filter_field_{{ i }}" placeholder="field (e.g. status, region, responsible)" value="{{ f[i].field if i < f|length else '' }}">
+    <select name="filter_op_{{ i }}">
+      <option value="eq" {% if i < f|length and f[i].op == 'eq' %}selected{% endif %}>equals</option>
+      <option value="ne" {% if i < f|length and f[i].op == 'ne' %}selected{% endif %}>not equals</option>
+      <option value="contains" {% if i < f|length and f[i].op == 'contains' %}selected{% endif %}>contains</option>
+    </select>
+    <input type="text" name="filter_value_{{ i }}" placeholder="value" value="{{ f[i].value if i < f|length else '' }}">
+  </div>
+  {% endfor %}
+
+  <p class="mt">
+    <button type="submit" name="action" value="preview" class="btn">Preview</button>
+    <button type="submit" name="action" value="save" class="btn primary">Save report</button>
+  </p>
+</form>
+
+{% if result %}
+<h2>Preview</h2>
+{% if result.is_number %}
+<p class="big-number">{{ result.total }}</p>
+{% else %}
+<div class="card"><canvas id="previewChart" height="260"></canvas></div>
+<table>
+  <tr><th>{{ result.dim or 'Label' }}</th><th>{{ result.metric }}</th></tr>
+  {% for r in result.rows %}
+  <tr><td>{{ r.label }}</td><td>{{ r.value }}</td></tr>
+  {% endfor %}
+  <tr><th>Total</th><th>{{ result.total }}</th></tr>
+</table>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const SOURCES = {{ sources|tojson }};
+const sourceSel = document.querySelector('select[name="source"]');
+const dimSel = document.querySelector('select[name="dimension"]');
+const metricSel = document.querySelector('select[name="metric"]');
+const timeSel = document.querySelector('select[name="time_field"]');
+
+function repopulate(selected) {
+  const src = SOURCES[sourceSel.value];
+  dimSel.innerHTML = '<option value="">— (single number) —</option>';
+  (src ? Object.keys(src.dims) : []).forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    if (d === selected.dim) o.selected = true;
+    dimSel.appendChild(o);
+  });
+  metricSel.innerHTML = '';
+  (src ? Object.keys(src.metrics) : []).forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    if (m === selected.metric) o.selected = true;
+    metricSel.appendChild(o);
+  });
+  timeSel.innerHTML = '<option value="">— (none) —</option>';
+  (src ? Object.keys(src.time_fields) : []).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    if (t === selected.time) o.selected = true;
+    timeSel.appendChild(o);
+  });
+}
+sourceSel.addEventListener('change', () => repopulate({dim:'', metric:'', time:''}));
+repopulate({dim: {{ (config.dimension if config else '')|tojson }}, metric: {{ (config.metric if config else '')|tojson }}, time: {{ (config.time_field if config else '')|tojson }}});
+</script>
+
+{% if result and not result.is_number %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+const ctx = document.getElementById('previewChart').getContext('2d');
+new Chart(ctx, {
+  type: {{ result.chart|tojson }},
+  data: {
+    labels: {{ result.labels|tojson }},
+    datasets: [{
+      data: {{ result.values|tojson }},
+      backgroundColor: ['#C5B358', '#8a8a85', '#5a5a55', '#3a3a38', '#6b6b66', '#a9a9a0'],
+      borderColor: '#1A1A1B'
+    }]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#F5F5F2' } } },
+    scales: {
+      x: { ticks: { color: '#F5F5F2' } },
+      y: { ticks: { color: '#F5F5F2' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

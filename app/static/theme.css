@@ -265,3 +265,14 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 }
 .auth-card .brand { margin-bottom: 1rem; }
 .auth-card input { max-width: 100%; }
+
+/* Reports & dashboards */
+.big-number {
+  font-size: 3.4rem;
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--accent);
+  margin: 0.4rem 0 0.2rem;
+}
+.total-row { border-top: 1px solid var(--hairline); }
+.widget-chart { width: 100%; min-height: 200px; }

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ report.name }} — LeadFlow{% endblock %}
+{% block content %}
+<p class="small muted"><a href="{{ url_for('reports.reports_page') }}">← Reports</a></p>
+<h1>{{ report.name }}</h1>
+<p class="small muted">{{ report.kind }} · <a href="{{ url_for('reports.export_report', report_id=report.id) }}">Export CSV</a></p>
+
+{% if widgets %}
+<div class="grid-2">
+  {% for w in widgets %}
+  <div class="card">
+    <h3><a href="{{ url_for('reports.view_report', report_id=w.id) }}">{{ w.name }}</a></h3>
+    {% if w.result.is_number %}
+    <p class="big-number">{{ w.result.total }}</p>
+    {% else %}
+    <canvas class="widget-chart" data-labels='{{ w.result.labels|tojson }}' data-values='{{ w.result.values|tojson }}' data-type='{{ w.result.chart }}' height="200"></canvas>
+    {% endif %}
+    <p class="small muted">Total: {{ w.result.total }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">This dashboard has no reports yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+document.querySelectorAll('.widget-chart').forEach(function (el) {
+  new Chart(el.getContext('2d'), {
+    type: el.dataset.type,
+    data: {
+      labels: JSON.parse(el.dataset.labels),
+      datasets: [{
+        data: JSON.parse(el.dataset.values),
+        backgroundColor: ['#C5B358', '#8a8a85', '#5a5a55', '#3a3a38', '#6b6b66', '#a9a9a0'],
+        borderColor: '#1A1A1B'
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { labels: { color: '#F5F5F2' } } },
+      scales: {
+        x: { ticks: { color: '#F5F5F2' } },
+        y: { ticks: { color: '#F5F5F2' }, beginAtZero: true }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

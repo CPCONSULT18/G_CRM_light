@@ -5,7 +5,13 @@ from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..db import get_db
-from ..importer import detect_delimiter, import_lead_csv, map_columns, parse_contact_cell
+from ..importer import (
+    detect_delimiter,
+    import_lead_csv,
+    map_columns,
+    parse_contact_cell,
+    scan_acquisition_columns,
+)
 from ..matcher import run_match_all
 from . import import_bp
 
@@ -39,11 +45,28 @@ def import_blocklist():
             rows = list(reader)
             header, body = rows[0], rows[1:]
 
+            lowered = [h.strip().lower() for h in header]
+            summary_map, steps = scan_acquisition_columns(header)
+            # Dealer layout present when the file has an Investor/company column
+            # and/or acquisition columns -> leads get created/updated too.
+            has_dealer = any(
+                kw in h
+                for kw in ("investor", "group", "firma", "company", "firm")
+                for h in lowered
+            ) or bool(summary_map or steps)
+
+            lead_stats = None
+            if has_dealer:
+                lead_stats = import_lead_csv(
+                    raw,
+                    source_label="blocklist",
+                    lead_source="blocklist",
+                )
+
             added = 0
             for row in body:
                 # Flexible: name/email/phone/domain by keyword, else positional fallback.
                 rec = {}
-                lowered = [h.strip().lower() for h in header]
                 for field, keywords in [
                     ("email", ["email", "mail"]),
                     ("phone", ["phone", "tel", "telefon"]),
@@ -61,7 +84,15 @@ def import_blocklist():
                 )
                 added += 1
             db.commit()
-            flash(f"Imported {added} blocklist rows.")
+
+            msg = f"Imported {added} blocklist rows."
+            if lead_stats:
+                msg += (
+                    f" Leads: {lead_stats['leads_created']} created, "
+                    f"{lead_stats['leads_updated']} updated, "
+                    f"{lead_stats['pipeline_leads']} with pipeline dates."
+                )
+            flash(msg)
             return redirect(url_for("imports.import_page"))
         flash("No file uploaded.")
     return redirect(url_for("imports.import_page"))

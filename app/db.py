@@ -105,6 +105,25 @@ CREATE TABLE IF NOT EXISTS matches (
     UNIQUE(lead_id, contacted_id, field)
 );
 
+CREATE TABLE IF NOT EXISTS pipeline_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id     INTEGER REFERENCES leads(id) ON DELETE CASCADE,
+    step_key    TEXT NOT NULL,
+    step_label  TEXT,
+    step_date   TEXT,
+    UNIQUE(lead_id, step_key)
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    kind        TEXT NOT NULL DEFAULT 'report',
+    config_json TEXT NOT NULL,
+    created_at  TEXT DEFAULT (datetime('now')),
+    updated_at  TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT
@@ -135,6 +154,8 @@ CREATE INDEX IF NOT EXISTS idx_matches_lead        ON matches(lead_id);
 CREATE INDEX IF NOT EXISTS idx_contacted_email     ON contacted(email);
 CREATE INDEX IF NOT EXISTS idx_contacted_phone     ON contacted(phone);
 CREATE INDEX IF NOT EXISTS idx_contacted_domain    ON contacted(domain);
+CREATE INDEX IF NOT EXISTS idx_pipeline_events_lead ON pipeline_events(lead_id);
+CREATE INDEX IF NOT EXISTS idx_reports_owner       ON reports(owner_id);
 """
 
 DEFAULT_SETTINGS = {
@@ -154,6 +175,12 @@ DEFAULT_SETTINGS = {
 MIGRATIONS = [
     ("activities", "gmail_msg_id", "TEXT"),
     ("leads", "responsible", "TEXT"),
+    ("leads", "last_status", "TEXT"),
+    ("leads", "entrypoint", "TEXT"),
+    ("leads", "gad_status", "TEXT"),
+    ("leads", "sales_service", "TEXT"),
+    ("leads", "acquisition_status", "TEXT"),
+    ("leads", "acquisition_progress", "TEXT"),
 ]
 
 

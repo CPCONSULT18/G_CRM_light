@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}New dashboard — LeadFlow{% endblock %}
+{% block content %}
+<p class="small muted"><a href="{{ url_for('reports.reports_page') }}">← Reports</a></p>
+<h1>New dashboard</h1>
+
+<p class="muted mb">Combine your saved reports onto one page. A dashboard is a collection of charts and numbers.</p>
+
+<form method="post" action="{{ url_for('reports.build_dashboard') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <label>Dashboard name</label>
+    <input type="text" name="name" required>
+  </div>
+
+  <h3>Reports to include</h3>
+  {% if reports %}
+  <table>
+    <tr><th></th><th>Name</th></tr>
+    {% for r in reports %}
+    <tr>
+      <td><input type="checkbox" name="report_ids" value="{{ r.id }}" style="width:auto"></td>
+      <td>{{ r.name }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No saved reports yet — <a href="{{ url_for('reports.build_report') }}">create one first</a>.</p>
+  {% endif %}
+
+  <p class="mt"><button type="submit" class="btn primary">Save dashboard</button></p>
+</form>
+{% endblock %}
