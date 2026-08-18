@@ -47,7 +47,7 @@
 - Gmail live test needs Google Cloud OAuth client (user action).
 
 ## GitHub push status
-- All local work is pushed to origin/main (Phases 0-8 + docs/blueprint updates).
+- All local work is pushed to origin/main (Phases 0-8 + docs/blueprint updates). Release tag **`v0.6.0`** marks the Phase 8 state as a stable code fallback; README documents the fresh-machine restore steps. Data (DB) stays local and is backed up via `backup.bat`.
 
 ## Key decisions (for continuity)
 - No separate `tasks` table: reminders are `activities` with `due_date` + status.

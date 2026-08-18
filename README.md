@@ -34,3 +34,21 @@ Self-hosted light CRM for cold outreach: CSV import (blocklist + sourced leads),
 
 ## Data & privacy
 All data stays local in `data/leadflow.db`. Client CSVs, Gmail tokens, and API keys are gitignored — never commit them.
+
+## Backup & restore
+
+**GitHub = code fallback.** The full app + docs live on `github.com/CPCONSULT18/G_CRM_light` (tagged releases at `v0.6.0`, …). To restore on a fresh machine:
+
+```bat
+git clone https://github.com/CPCONSULT18/G_CRM_light.git
+cd G_CRM_light
+python -m venv .venv && .venv\Scripts\activate
+pip install -r requirements.txt
+flask --app run.py init-db
+flask --app run.py create-user --email you@x.com --name YourName --role admin
+start-secure.bat        (or: python run.py, then open http://localhost:5000)
+```
+
+Order matters: run `init-db` before `create-user` (a fresh clone has no `users` table yet).
+
+**Data stays local.** The CRM database is intentionally not on GitHub. Back it up with `backup.bat`, which copies `data/leadflow.db` to `C:\Users\Lenovo\Desktop\LEADFLOW_backups\` (timestamped). Restore = copy a backup file back to `data\leadflow.db` (stop the app first).

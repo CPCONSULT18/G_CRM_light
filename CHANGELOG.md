@@ -2,6 +2,9 @@
 
 All notable changes to this project, dated.
 
+## [0.6.1] — 2026-08-18
+- **Backup & restore documented.** README gained a "Backup & restore" section: GitHub = code fallback (clone → pip install → `init-db` → `create-user` → run), data stays local (`backup.bat` → `LEADFLOW_backups\`). Release tag `v0.6.0` created at the Phase 8 commit as a stable restore point.
+
 ## [0.6.0] — 2026-08-18
 - **Phase 8 (auth, user profiles, HTTPS) complete.**
 - **Auth**: login required app-wide (Flask-Login) with `/login` + `/logout`; CSRF (Flask-WTF) on every POST; session cookie HttpOnly + SameSite=Lax (+ Secure behind the TLS proxy). No more open data wipe in Settings.
