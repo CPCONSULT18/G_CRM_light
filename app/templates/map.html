@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Map — LeadFlow{% endblock %}
+{% block content %}
+<h1>Map</h1>
+<div class="flex mb">
+  {% if has_ors_key %}<span class="badge ok">isochrones enabled</span>
+  {% else %}<span class="badge">dots-only (no ORS key)</span>{% endif %}
+  {% if pending_geocode %}<span class="badge probable">{{ pending_geocode }} need geocoding</span>{% endif %}
+</div>
+
+<div class="flex mb">
+  <form method="post" action="{{ url_for('map.geocode') }}">
+    <button type="submit" class="btn">Geocode pending (Nominatim)</button>
+  </form>
+  <form method="post" action="{{ url_for('map.isochrones') }}">
+    <button type="submit" class="btn primary">Fetch isochrones (rate-limited)</button>
+  </form>
+</div>
+
+<div id="map"></div>
+
+<p class="small muted mt">{{ locations|length }} plotted locations. Click a marker for details.</p>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([51.1, 10.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+fetch('{{ url_for("map.map_locations") }}')
+  .then(r => r.json())
+  .then(locations => {
+    const isochroneLayer = L.layerGroup().addTo(map);
+    const dotLayer = L.layerGroup().addTo(map);
+    locations.forEach(loc => {
+      const marker = L.circleMarker([loc.lat, loc.lng], {
+        radius: 6, color: '#C5B358', fillColor: '#C5B358', fillOpacity: 0.85, weight: 1
+      }).addTo(dotLayer);
+      marker.bindPopup(
+        '<strong>' + (loc.name || '') + '</strong><br>' +
+        (loc.address || '') + '<br>' + (loc.plz || '') + ' ' + (loc.city || '')
+      );
+      if (loc.iso_json) {
+        try {
+          const iso = JSON.parse(loc.iso_json);
+          if (iso['30-min']) {
+            L.geoJSON(iso['30-min'], { style: { color: '#C05B4A', fillColor: '#C05B4A', fillOpacity: 0.2, weight: 1 } }).addTo(isochroneLayer);
+          }
+          if (iso['20-min']) {
+            L.geoJSON(iso['20-min'], { style: { color: '#C5B358', fillColor: '#C5B358', fillOpacity: 0.25, weight: 1 } }).addTo(isochroneLayer);
+          }
+        } catch (e) {}
+      }
+    });
+    if (locations.length) {
+      const bounds = dotLayer.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
+    }
+  });
+</script>
+{% endblock %}

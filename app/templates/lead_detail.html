@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ lead.company_name }} — LeadFlow{% endblock %}
+{% block content %}
+<p class="small muted"><a href="{{ url_for('leads.list_leads') }}">← All leads</a></p>
+<h1>{{ lead.company_name }}</h1>
+<p class="muted">Region: {{ lead.company_region or lead.region or '—' }} · Status: {{ lead.status }} · Source: {{ lead.source or '—' }}</p>
+
+{% if matches %}
+<h2>Dedup matches</h2>
+{% for m in matches %}
+  <p>
+    <span class="badge {{ m.confidence }}">{{ m.confidence }}</span>
+    matched <span class="highlight-underline">{{ m.field }}</span> → contacted:
+    {{ m.c_name or '—' }}{% if m.c_email %} · {{ m.c_email }}{% endif %}{% if m.c_phone %} · {{ m.c_phone }}{% endif %}
+  </p>
+{% endfor %}
+{% endif %}
+
+<h2>Contacts</h2>
+{% if contacts %}
+<table>
+  <tr><th>Name</th><th>Email</th><th>Phone</th></tr>
+  {% for c in contacts %}
+  <tr><td>{{ c.name or '—' }}</td><td>{{ c.email or '—' }}</td><td>{{ c.phone or '—' }}</td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">No contacts.</p>{% endif %}
+
+<h2>Locations</h2>
+{% if locations %}
+<table>
+  <tr><th>Address</th><th>City</th><th>PLZ</th><th>Phone</th><th>Geo</th></tr>
+  {% for o in locations %}
+  <tr>
+    <td>{{ o.address or '—' }}</td><td>{{ o.city or '—' }}</td><td>{{ o.plz or '—' }}</td>
+    <td>{{ o.phone or '—' }}</td>
+    <td>{% if o.lat %}{{ "%.5f"|format(o.lat) }}, {{ "%.5f"|format(o.lng) }}{% else %}—{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">No locations.</p>{% endif %}
+
+<h2>Log outcome</h2>
+<form method="post" action="{{ url_for('leads.log_outcome', lead_id=lead.id) }}">
+  <div class="outcomes">
+    <button type="submit" name="outcome" value="called" class="outcome-btn">Called</button>
+    <button type="submit" name="outcome" value="not_interested" class="outcome-btn">Not interested</button>
+    <button type="submit" name="outcome" value="callback" class="outcome-btn">Callback</button>
+    <button type="submit" name="outcome" value="no_answer" class="outcome-btn">No answer</button>
+    <button type="submit" name="outcome" value="voicemail" class="outcome-btn">Voicemail</button>
+    <button type="submit" name="outcome" value="appointment_booked" class="outcome-btn primary">Appointment booked</button>
+    <button type="submit" name="outcome" value="won" class="outcome-btn">Won</button>
+    <button type="submit" name="outcome" value="lost" class="outcome-btn">Lost</button>
+  </div>
+  <div class="mt">
+    <label>Callback date (only for Callback)</label>
+    <input type="date" name="due_date">
+  </div>
+  <div>
+    <label>Notes</label>
+    <textarea name="notes" rows="2" placeholder="Optional note…"></textarea>
+  </div>
+  <p class="mt"><button type="submit" class="btn primary">Save</button></p>
+</form>
+
+<h2>Activity</h2>
+{% if activities %}
+<table>
+  <tr><th>When</th><th>Type</th><th>Outcome</th><th>Due</th><th>Status</th><th>Notes</th></tr>
+  {% for a in activities %}
+  <tr>
+    <td>{{ a.occurred_at }}</td><td>{{ a.type }}</td><td>{{ a.outcome or '' }}</td>
+    <td>{{ a.due_date or '' }}</td><td>{{ a.status }}</td><td class="muted">{{ a.notes or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">No activity logged yet.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Leads — LeadFlow{% endblock %}
+{% block content %}
+<h1>Leads</h1>
+
+<form method="get" class="flex mb">
+  <input type="text" name="region" placeholder="Region / Metro Area" value="{{ filters.region }}">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in ['new','called','callback','appointment','not_interested','won','lost'] %}
+    <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="match">
+    <option value="">All matches</option>
+    <option value="hard" {% if filters.match == 'hard' %}selected{% endif %}>hard</option>
+    <option value="probable" {% if filters.match == 'probable' %}selected{% endif %}>probable</option>
+    <option value="soft" {% if filters.match == 'soft' %}selected{% endif %}>soft</option>
+    <option value="clear" {% if filters.match == 'clear' %}selected{% endif %}>no match</option>
+  </select>
+  <button type="submit" class="btn">Filter</button>
+</form>
+
+{% if leads %}
+<table>
+  <tr>
+    <th>Company</th><th>Region</th><th>Contacts</th><th>Locations</th><th>Status</th><th>Matches</th>
+  </tr>
+  {% for l in leads %}
+  <tr>
+    <td><a href="{{ url_for('leads.lead_detail', lead_id=l.id) }}">{{ l.company_name }}</a></td>
+    <td>{{ l.region or '' }}</td>
+    <td>{{ l.n_contacts }}</td>
+    <td>{{ l.n_locations }}</td>
+    <td>{{ l.status }}</td>
+    <td>
+      {% if l.match_confs %}
+        {% for conf in l.match_confs.split(',') %}
+          <span class="badge {{ conf }}">{{ conf }}</span>
+        {% endfor %}
+      {% else %}<span class="muted">—</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No leads found.</p>
+{% endif %}
+
+<h2>Regions</h2>
+{% if regions %}
+<div class="flex">
+  {% for r in regions %}
+    <a class="badge" href="{{ url_for('leads.list_leads', region=r) }}">{{ r }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

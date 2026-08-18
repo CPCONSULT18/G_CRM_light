@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LeadFlow{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">LeadFlow<span class="dot">.</span></div>
+    <nav class="nav">
+      <a href="{{ url_for('main.index') }}" {% if request.endpoint == 'main.index' %}class="active"{% endif %}>Dashboard</a>
+      <a href="{{ url_for('leads.list_leads') }}" {% if request.endpoint and request.endpoint.startswith('leads.') %}class="active"{% endif %}>Leads</a>
+      <a href="{{ url_for('imports.import_page') }}" {% if request.endpoint and request.endpoint.startswith('imports.') %}class="active"{% endif %}>Import</a>
+      <a href="{{ url_for('imports.match_review') }}" {% if request.endpoint == 'imports.match_review' %}class="active"{% endif %}>Matches</a>
+      <a href="{{ url_for('map.map_page') }}" {% if request.endpoint and request.endpoint.startswith('map.') %}class="active"{% endif %}>Map</a>
+      <a href="{{ url_for('reports.reports_page') }}" {% if request.endpoint and request.endpoint.startswith('reports.') %}class="active"{% endif %}>Reports</a>
+      <a href="{{ url_for('settings.settings_page') }}" {% if request.endpoint and request.endpoint.startswith('settings.') %}class="active"{% endif %}>Settings</a>
+    </nav>
+  </aside>
+  <main class="content">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flashes">
+          {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

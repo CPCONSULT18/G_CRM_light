@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Settings — LeadFlow{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+
+<form method="post">
+  <label>Default country code (phone normalization)</label>
+  <input type="text" name="country_code" value="{{ country_code }}">
+
+  <label>OpenRouteService API key (isochrones)</label>
+  <input type="password" name="ors_api_key" value="{{ ors_api_key }}" placeholder="dots-only until a key is set">
+
+  <p class="mt"><button type="submit" class="btn primary">Save</button></p>
+</form>
+
+<h2>Danger zone</h2>
+<form method="post" action="{{ url_for('settings.data_actions') }}" onsubmit="return confirm('Wipe all CRM data? This cannot be undone.')">
+  <input type="hidden" name="action" value="wipe">
+  <button type="submit" class="btn danger">Wipe CRM data</button>
+</form>
+{% endblock %}

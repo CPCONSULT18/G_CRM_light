@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Matches — LeadFlow{% endblock %}
+{% block content %}
+<div class="flex" style="justify-content: space-between; align-items: center;">
+  <h1>Dedup matches</h1>
+  <form method="post" action="{{ url_for('imports.recount_matches') }}">
+    <button type="submit" class="btn">Re-run matching</button>
+  </form>
+</div>
+<p class="muted mb">Leads flagged against the blocklist. Hard = skip. Probable/soft = review, then decide.</p>
+
+{% if matches %}
+<table>
+  <tr><th>Confidence</th><th>Field</th><th>Company</th><th>Contacted (blocklist)</th></tr>
+  {% for m in matches %}
+  <tr>
+    <td><span class="badge {{ m.confidence }}">{{ m.confidence }}</span></td>
+    <td>{{ m.field }}</td>
+    <td><a href="{{ url_for('leads.lead_detail', lead_id=m.lead_id) }}">{{ m.company_name }}</a></td>
+    <td class="muted">
+      {{ m.contacted_name or '—' }}{% if m.contacted_email %} · {{ m.contacted_email }}{% endif %}{% if m.contacted_phone %} · {{ m.contacted_phone }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No matches yet. Import a blocklist first, then re-run matching.</p>
+{% endif %}
+{% endblock %}

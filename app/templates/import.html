@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Import — LeadFlow{% endblock %}
+{% block content %}
+<h1>Import</h1>
+<p class="muted mb">Two imports: the blocklist ("already contacted") and the sourced leads (dealer layout). Both are one-click after mapping is confirmed.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>1 · Blocklist</h3>
+    <p class="small muted mb">Paste/download the SharePoint "already contacted" CSV (email/phone/name/domain columns).</p>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('imports.import_blocklist') }}">
+      <input type="file" name="file" accept=".csv">
+      <p class="mt"><button type="submit" class="btn">Import blocklist</button></p>
+    </form>
+  </div>
+  <div class="card">
+    <h3>2 · Leads</h3>
+    <p class="small muted mb">Dealer layout CSV: Metro Area/State, City, Investor (Group), Dealer Location Street/ZIP, Contact at Dealer.</p>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('imports.import_leads') }}">
+      <input type="file" name="file" accept=".csv">
+      <label>Source label (optional)</label>
+      <input type="text" name="source_label" placeholder="e.g. region-2026">
+      <label class="flex">
+        <input type="checkbox" name="run_match" style="width:auto"> &nbsp;Run dedup matching after import
+      </label>
+      <p class="mt"><button type="submit" class="btn primary">Import leads</button></p>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Preview before import (recommended)</h3>
+  <p class="small muted mb">Upload the leads CSV to verify column mapping and contact-cell parsing without importing.</p>
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('imports.preview_leads') }}">
+    <input type="file" name="file" accept=".csv">
+    <p class="mt"><button type="submit" class="btn">Preview</button></p>
+  </form>
+</div>
+{% endblock %}

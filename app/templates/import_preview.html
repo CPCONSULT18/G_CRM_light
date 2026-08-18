@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Preview — LeadFlow{% endblock %}
+{% block content %}
+<h1>Preview</h1>
+<p class="muted mb">{{ total }} data rows detected. Header:</p>
+<div class="flex mb">
+  {% for h in header %}<span class="badge">{{ h or '·' }}</span>{% endfor %}
+</div>
+
+<h2>Detected mapping</h2>
+<table>
+  <tr><th>Field</th><th>Column index</th></tr>
+  {% for field, idx in mapping.items() %}
+  <tr><td>{{ field }}</td><td>{{ idx }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Contact-cell parsing (first rows)</h2>
+<table>
+  <tr><th>Company</th><th>Region</th><th>City</th><th>Address</th><th>PLZ</th><th>Raw cell</th><th>→ Name</th><th>Email</th><th>Phone</th></tr>
+  {% for r in preview_rows %}
+  <tr>
+    <td>{{ r.company }}</td><td>{{ r.region }}</td><td>{{ r.city }}</td>
+    <td>{{ r.address }}</td><td>{{ r.plz }}</td>
+    <td class="small">{{ r.contact_raw }}</td>
+    <td>{{ r.contact_name }}</td><td>{{ r.contact_email }}</td><td>{{ r.contact_phone }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p class="mt"><a class="btn" href="{{ url_for('imports.import_page') }}">Back to import</a></p>
+{% endblock %}

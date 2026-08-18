@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LeadFlow{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num">{{ total_leads }}</div><div class="lbl">Leads</div></div>
+  <div class="stat"><div class="num">{{ total_companies }}</div><div class="lbl">Companies</div></div>
+  <div class="stat"><div class="num">{{ open_callbacks }}</div><div class="lbl">Callbacks open</div></div>
+  <div class="stat"><div class="num">{{ appointments }}</div><div class="lbl">Appointments</div></div>
+  <div class="stat"><div class="num">{{ hard_matches }}</div><div class="lbl">Hard matches</div></div>
+</div>
+
+<h2>Recent activity</h2>
+{% if recent %}
+<table>
+  <tr><th>When</th><th>Company</th><th>Type</th><th>Outcome</th><th>Notes</th></tr>
+  {% for a in recent %}
+  <tr>
+    <td>{{ a.occurred_at }}</td>
+    <td><a href="{{ url_for('leads.lead_detail', lead_id=a.lead_id) }}">{{ a.company_name }}</a></td>
+    <td>{{ a.type }}</td>
+    <td>{{ a.outcome or '' }}</td>
+    <td class="muted">{{ a.notes or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No activity yet. <a href="{{ url_for('imports.import_page') }}">Import leads</a> to begin.</p>
+{% endif %}
+{% endblock %}

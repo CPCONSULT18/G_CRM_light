@@ -1,0 +1,245 @@
+/* ============================================================
+   LeadFlow CRM — Visual Identity (strict)
+   bg #1A1A1B · text #F5F5F2 · accent #C5B358 (high-impact only)
+   1px hairlines · generous whitespace · "carved" text
+   ============================================================ */
+
+:root {
+  --bg: #1A1A1B;
+  --bg-raised: #222224;
+  --bg-hover: #2A2A2D;
+  --text: #F5F5F2;
+  --text-dim: #9A9A94;
+  --accent: #C5B358;
+  --hairline: rgba(245, 245, 242, 0.14);
+  --danger: #C05B4A;
+  --ok: #6B8F5E;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  min-height: 100vh;
+}
+
+/* "Carved" feel: light weights, breathing room, dim secondary text */
+h1, h2, h3, h4 {
+  font-weight: 200;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+h1 { font-size: 1.9rem; margin-bottom: 0.4em; }
+h2 { font-size: 1.4rem; margin: 1.6em 0 0.6em; }
+h3 { font-size: 1.1rem; margin: 1.2em 0 0.4em; }
+
+a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+a:hover { border-bottom: 1px solid var(--accent); color: var(--text); }
+
+/* --- Layout -------------------------------------------------- */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  padding: 2.2rem 1.6rem;
+  border-right: 1px solid var(--hairline);
+}
+.brand {
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+  font-weight: 200;
+  text-transform: uppercase;
+  margin-bottom: 2.4rem;
+}
+.brand .dot { color: var(--accent); }
+
+.nav { display: flex; flex-direction: column; gap: 0.2rem; }
+.nav a {
+  padding: 0.45rem 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  letter-spacing: 0.05em;
+}
+.nav a:hover, .nav a.active {
+  color: var(--text);
+  border-bottom: none;
+}
+.nav a.active { border-left: 1px solid var(--accent); padding-left: 0.6rem; }
+
+.content {
+  flex: 1;
+  padding: 2.6rem 3rem 4rem;
+  max-width: 1100px;
+}
+
+/* --- Cards & tables ------------------------------------------- */
+.card {
+  background: var(--bg-raised);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.4rem;
+}
+.card + .card { margin-top: -0.6rem; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+.stat {
+  padding: 1.4rem 1.2rem;
+  background: var(--bg-raised);
+}
+.stat .num {
+  font-size: 2.2rem;
+  font-weight: 200;
+  letter-spacing: 0.02em;
+}
+.stat .lbl {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.7rem 0.8rem;
+}
+td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+}
+tr:hover td { background: var(--bg-hover); }
+
+/* --- Badges ---------------------------------------------------- */
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--hairline);
+}
+.badge.hard { color: var(--danger); border-color: rgba(192, 91, 74, 0.5); }
+.badge.probable { color: var(--accent); border-color: rgba(197, 179, 88, 0.5); }
+.badge.soft { color: var(--text-dim); }
+.badge.ok { color: var(--ok); border-color: rgba(107, 143, 94, 0.5); }
+
+/* --- Buttons (accent reserved for primary CTA only) ----------- */
+.btn {
+  display: inline-block;
+  padding: 0.55rem 1.4rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.btn:hover { border-color: var(--text); }
+.btn.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn.primary:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+.btn.small { padding: 0.3rem 0.9rem; font-size: 0.78rem; }
+.btn.danger { border-color: rgba(192, 91, 74, 0.6); color: var(--danger); }
+
+/* --- Forms ----------------------------------------------------- */
+label {
+  display: block;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 1rem 0 0.4rem;
+}
+input[type="text"], input[type="date"], input[type="password"],
+textarea, select {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+
+/* --- Flash messages -------------------------------------------- */
+.flashes { margin-bottom: 1.4rem; }
+.flash {
+  padding: 0.7rem 1rem;
+  border-left: 1px solid var(--accent);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Misc ------------------------------------------------------ */
+.muted { color: var(--text-dim); }
+.small { font-size: 0.85rem; }
+.hairline { border-bottom: 1px solid var(--hairline); }
+.highlight-underline { border-bottom: 1px solid var(--accent); }
+.right { text-align: right; }
+.mt { margin-top: 1.2rem; }
+.mb { margin-bottom: 1.2rem; }
+.flex { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* Outcome chips on lead detail */
+.outcomes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.outcome-btn {
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--hairline);
+  font-size: 0.8rem;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.outcome-btn:hover { color: var(--text); border-color: var(--text); }
+.outcome-btn.selected { color: var(--accent); border-color: var(--accent); }
+
+/* Map */
+#map { height: 560px; width: 100%; background: var(--bg); }
+.leaflet-container { background: var(--bg); }

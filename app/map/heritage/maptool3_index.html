@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLZ Isochrone Map v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: 'Segoe UI', -apple-system, sans-serif; background: #1A1A1B; color: #F5F5F2; }
+#app { display: flex; flex-direction: column; height: 100vh; }
+#topbar { background: #222; padding: 12px 20px; border-bottom: 1px solid #333; flex-shrink: 0; }
+#upload-zone { border: 2px dashed #444; border-radius: 8px; padding: 14px 20px; text-align: center; cursor: pointer; transition: 0.2s; margin-bottom: 8px; font-size: 14px; color: #999; }
+#upload-zone:hover, #upload-zone.dragover { border-color: #003153; background: #1a2a33; color: #F5F5F2; }
+#upload-zone.has-data { border-color: #00804a; background: #0a2a1a; }
+#file-input { display: none; }
+#api-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+#api-row label { font-size: 12px; color: #888; white-space: nowrap; }
+#api-key-input { background: #1A1A1B; color: #F5F5F2; border: 1px solid #444; border-radius: 4px; padding: 4px 8px; font-size: 12px; flex: 1; min-width: 150px; }
+#api-key-input:focus { border-color: #003153; outline: none; }
+#api-status { font-size: 11px; color: #888; }
+#api-status.ok { color: #4caf50; }
+#api-status.err { color: #e88; }
+#controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 4px; }
+.btn { padding: 5px 14px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+.btn-primary { background: #003153; color: #F5F5F2; }
+.btn-primary:hover { background: #004a7a; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ors { background: #2a4a1a; color: #F5F5F2; }
+.btn-ors:hover { background: #3a6a2a; }
+.btn-danger { background: #5a1a1a; color: #F5F5F2; }
+.btn-danger:hover { background: #7a2a2a; }
+#stats { font-size: 13px; color: #aaa; margin-top: 6px; line-height: 1.6; }
+#stats strong { color: #F5F5F2; }
+#stats .error-link { color: #e88; text-decoration: underline; cursor: pointer; }
+#stats .error-link:hover { color: #faa; }
+#map { flex: 1; }
+.leaflet-control-legend { background: rgba(26,26,27,0.92); color: #F5F5F2; padding: 10px 14px; border-radius: 6px; font-size: 12px; line-height: 1.9; border: 1px solid #444; max-width: 240px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-circle { width: 14px; height: 14px; border-radius: 50%; opacity: 0.5; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.legend-tier { font-size: 11px; color: #888; padding-left: 20px; }
+.template-link { color: #6699cc; cursor: pointer; text-decoration: underline; font-size: 13px; }
+.template-link:hover { color: #88bbee; }
+#modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; }
+#modal-overlay.active { display: flex; }
+#modal-box { background: #222; border-radius: 10px; padding: 30px; max-width: 500px; width: 90%; border: 1px solid #444; }
+#modal-box h2 { margin-bottom: 16px; font-size: 18px; }
+#modal-box p { font-size: 14px; color: #aaa; margin-bottom: 12px; }
+#progress-bar-wrap { background: #333; border-radius: 10px; height: 20px; overflow: hidden; margin: 16px 0; }
+#progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #003153, #0066aa); transition: width 0.3s; }
+#progress-text { font-size: 14px; text-align: center; color: #F5F5F2; margin-bottom: 8px; }
+#modal-close-btn { display: none; margin: 12px auto 0; }
+#error-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; }
+#error-overlay.active { display: flex; }
+#error-box { background: #222; border-radius: 10px; padding: 30px; max-width: 800px; width: 90%; border: 1px solid #444; max-height: 80vh; display: flex; flex-direction: column; }
+#error-box h2 { margin-bottom: 16px; font-size: 18px; }
+#error-table-wrap { overflow: auto; flex: 1; margin: 10px 0; }
+#error-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+#error-table th { background: #333; color: #F5F5F2; padding: 8px 10px; text-align: left; position: sticky; top: 0; }
+#error-table td { padding: 6px 10px; border-bottom: 1px solid #333; color: #ccc; }
+#error-table tr:hover td { background: #2a2a2b; }
+hr { border: none; border-top: 1px solid #444; margin: 8px 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div id="upload-zone">
+      <div id="upload-text">Drop your address CSV or JSON here, or click to browse</div>
+      <div style="margin-top:6px;font-size:12px;color:#666;">
+        Need a template?
+        <span class="template-link" onclick="downloadTemplate('json')">JSON</span>
+        &middot;
+        <span class="template-link" onclick="downloadTemplate('csv')">CSV</span>
+        &middot;
+        <span class="template-link" onclick="downloadTemplate('csv-dots')">CSV (dots only)</span>
+        &middot;
+        <span class="template-link" onclick="downloadTemplate('json-dots')">JSON (dots only)</span>
+      </div>
+      <input type="file" id="file-input" accept=".json,.csv,application/json,text/csv" />
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px;">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#aaa;">
+        <input type="checkbox" id="chk-dots-only" /> Dots only (no isochrones)
+      </label>
+      <span id="mode-indicator" style="color:#888;"></span>
+    </div>
+
+    <div id="api-row">
+      <label>ORS API Key:</label>
+      <input type="password" id="api-key-input" placeholder="Enter your OpenRouteService API key..." />
+      <button class="btn btn-primary" onclick="saveApiKey()" style="padding:4px 10px;font-size:12px;">Save</button>
+      <span id="api-status"></span>
+    </div>
+
+    <div id="controls">
+      <button class="btn btn-ors" onclick="fetchAllIsochrones()" id="btn-fetch-iso" disabled>Fetch Isochrones</button>
+      <button class="btn btn-danger" onclick="resetAll()">Reset</button>
+    </div>
+
+    <div id="stats">No data loaded.</div>
+  </div>
+
+  <div id="map"></div>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h2 id="modal-title">Processing</h2>
+    <p id="modal-desc">Working...</p>
+    <div id="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+    <p id="progress-text">0 / 0</p>
+    <div id="modal-actions">
+      <button class="btn btn-primary" id="modal-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="error-overlay">
+  <div id="error-box">
+    <h2>Errors</h2>
+    <div id="error-table-wrap">
+      <table id="error-table">
+        <thead><tr><th>#</th><th>Location</th><th>Lat</th><th>Lng</th><th>Issue</th><th>What to do</th></tr></thead>
+        <tbody id="error-tbody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn" onclick="document.getElementById('error-overlay').classList.remove('active')" style="background:#444;color:#F5F5F2;padding:5px 14px;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+var STATUS_LIST = ['ACTIVE', 'DONE', 'MINE', 'BLOCKED'];
+
+// ===== STATE =====
+var state = {
+  addresses: [], map: null,
+  markerLayer: null, isochroneLayer: null,
+  isFetchingIsochrones: false, cancelRequested: false,
+  isochrones: {}, isochroneCache: null, apiKey: '', errors: []
+};
+
+// ===== API KEY MANAGEMENT =====
+function loadApiKey() {
+  try {
+    var saved = localStorage.getItem('maptool3_api_key');
+    if (saved) { state.apiKey = saved; document.getElementById('api-key-input').value = saved; updateApiStatus(true); }
+  } catch(e) {}
+}
+
+function saveApiKey() {
+  var key = document.getElementById('api-key-input').value.trim();
+  state.apiKey = key;
+  try {
+    if (key) { localStorage.setItem('maptool3_api_key', key); updateApiStatus(true); }
+    else { localStorage.removeItem('maptool3_api_key'); updateApiStatus(false); }
+  } catch(e) { updateApiStatus(false); }
+  updateFetchButton();
+  var hasMain = state.addresses.some(function(a) { return a.group !== 'dots'; });
+  if (hasMain && state.addresses.length > 0 && !state.isFetchingIsochrones) fetchAllIsochrones();
+}
+
+function updateApiStatus(hasKey) {
+  var el = document.getElementById('api-status');
+  el.textContent = hasKey ? 'Key saved' : 'No key set';
+  el.className = hasKey ? 'ok' : 'err';
+}
+
+function updateFetchButton() {
+  var hasMain = state.addresses.some(function(a) { return a.group !== 'dots'; });
+  document.getElementById('btn-fetch-iso').disabled = !state.apiKey || !hasMain;
+}
+
+// ===== CACHING =====
+var CACHE_KEY = 'maptool3_isochrones';
+
+function loadIsochroneCache() {
+  try { var data = localStorage.getItem(CACHE_KEY); state.isochroneCache = data ? JSON.parse(data) : {}; }
+  catch(e) { state.isochroneCache = {}; }
+}
+
+function saveIsochroneCache() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(state.isochroneCache)); } catch(e) {}
+}
+
+function getCachedIsochrone(addr) {
+  if (!state.isochroneCache) return null;
+  var entry = state.isochroneCache['addr_' + addr.id];
+  if (!entry) return null;
+  if (entry.lat !== addr.lat || entry.lng !== addr.lng) return null;
+  return entry;
+}
+
+function updateCachedIsochrone(addr, rangeSec, feature) {
+  if (!state.isochroneCache) state.isochroneCache = {};
+  var key = 'addr_' + addr.id;
+  var entry = state.isochroneCache[key] || { lat: addr.lat, lng: addr.lng, iso30: null, iso20: null, timestamp: Date.now() };
+  if (rangeSec === 1800) entry.iso30 = feature;
+  else if (rangeSec === 1200) entry.iso20 = feature;
+  entry.timestamp = Date.now();
+  state.isochroneCache[key] = entry;
+  saveIsochroneCache();
+}
+
+// ===== INIT =====
+function init() {
+  loadApiKey();
+  loadIsochroneCache();
+
+  state.map = L.map('map', { center: [51.1657, 10.4515], zoom: 6, zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18, attribution: '&copy; <a href="https://osm.org/copyright">OSM</a>'
+  }).addTo(state.map);
+
+  var legend = L.control({ position: 'bottomright' });
+  legend.onAdd = function() {
+    var div = L.DomUtil.create('div', 'leaflet-control-legend');
+    div.innerHTML =
+      '<div class="legend-item"><div class="legend-circle" style="background:#2a2a2a;"></div> Location dot</div>'
+      + '<div class="legend-item"><div class="legend-circle" style="background:#4caf50;"></div> 20-min isochrone</div>'
+      + '<div class="legend-item"><div class="legend-circle" style="background:#cc3333;"></div> 30-min isochrone</div>'
+      + '<hr><div style="color:#888;">Click a marker for details</div>';
+    return div;
+  };
+  legend.addTo(state.map);
+  updateStats();
+}
+
+// ===== UPLOAD HANDLING =====
+var uploadZone = document.getElementById('upload-zone');
+var fileInput = document.getElementById('file-input');
+
+uploadZone.addEventListener('click', function() { fileInput.click(); });
+uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', function() { uploadZone.classList.remove('dragover'); });
+uploadZone.addEventListener('drop', function(e) {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', function(e) {
+  if (e.target.files[0]) { handleFile(e.target.files[0]); e.target.value = ''; }
+});
+
+function handleFile(file) {
+  var name = file.name.toLowerCase();
+  var dotsOnly = document.getElementById('chk-dots-only').checked;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    if (name.endsWith('.json')) {
+      var text = e.target.result.replace(/^\ufeff/, '');
+      var parsed;
+      try { parsed = JSON.parse(text); }
+      catch(err) { alert('Invalid JSON: ' + err.message); return; }
+      processAddressData(parsed, dotsOnly);
+    } else if (name.endsWith('.csv')) {
+      processCSV(e.target.result, dotsOnly);
+    } else { alert('Please upload a .json or .csv file.'); }
+  };
+  reader.readAsText(file);
+}
+
+// ===== CSV =====
+function parseCSV(text) {
+  var firstLine = text.split('\n')[0] || '';
+  var semiCount = (firstLine.match(/;/g) || []).length;
+  var commaCount = (firstLine.match(/,/g) || []).length;
+  var delim = semiCount >= commaCount ? ';' : ',';
+
+  var rows = [], current = [], field = '', inQuotes = false;
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === delim) { current.push(field); field = ''; }
+      else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+        if (ch === '\r') i++;
+      } else if (ch === '\r') {
+        current.push(field); field = '';
+        if (current.length > 1 || current[0] !== '') rows.push(current);
+        current = [];
+      } else { field += ch; }
+    }
+  }
+  if (field || current.length > 0) { current.push(field); rows.push(current); }
+  return rows;
+}
+
+function csvToAddresses(rows) {
+  if (rows.length < 2) { alert('CSV must have a header row and at least one data row.'); return null; }
+  var headers = rows[0].map(function(h) { return h.trim().toLowerCase(); });
+  var col = {};
+  for (var i = 0; i < headers.length; i++) {
+    var h = headers[i];
+    if (/^id$/i.test(h)) col.id = i;
+    else if (/^name$|^address$/i.test(h) || /^strasse$|^street$/i.test(h)) col.address = i;
+    else if (/^city$/i.test(h) || /^stadt$|^ort$/i.test(h)) col.city = i;
+    else if (/^plz$/i.test(h) || /^postal.?code$|^postcode$|^zip$/i.test(h)) col.plz = i;
+    else if (/^status$/i.test(h)) col.status = i;
+    else if (/^start.?date$|^startdatum$/i.test(h)) col.start_date = i;
+    else if (/^end.?date$|^enddatum$/i.test(h)) col.end_date = i;
+    else if (/^notes?$|^bemerkung$/i.test(h)) col.notes = i;
+    else if (/^tags$/i.test(h)) col.tags = i;
+    else if (/^lat$|^latitude$/i.test(h)) col.lat = i;
+    else if (/^lng$|^lon$|^longitude$|^long$/i.test(h)) col.lng = i;
+  }
+  if (col.lat == null || col.lng == null) {
+    alert('CSV must have "lat" and "lng" columns.');
+    return null;
+  }
+  var get = function(idx, row) { return (idx != null && idx < row.length) ? row[idx].trim() : ''; };
+  var result = [];
+  for (var r = 1; r < rows.length; r++) {
+    var row = rows[r];
+    if (!row || row.length === 0 || (row.length === 1 && row[0] === '')) continue;
+    var lat = parseFloat(get(col.lat, row).replace(',', '.'));
+    var lng = parseFloat(get(col.lng, row).replace(',', '.'));
+    if (isNaN(lat) || isNaN(lng)) continue;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) continue;
+    result.push({
+      id: get(col.id, row) || String(r),
+      address: get(col.address, row),
+      city: get(col.city, row),
+      plz: get(col.plz, row),
+      lat: lat,
+      lng: lng
+    });
+  }
+  return result;
+}
+
+function processCSV(text, dotsOnly) {
+  text = text.replace(/^\ufeff/, '');
+  var rows = parseCSV(text);
+  if (!rows || rows.length < 2) { alert('CSV file is empty or has no data rows.'); return; }
+  var data = csvToAddresses(rows);
+  if (!data || data.length === 0) { alert('No valid address rows found in CSV.'); return; }
+  loadAddresses(data, dotsOnly);
+}
+
+// ===== PROCESS ADDRESS DATA =====
+function processAddressData(data, dotsOnly) {
+  var raw = Array.isArray(data) ? data : (data.addresses || null);
+  if (!raw) { alert('JSON must contain an "addresses" array or be an array.'); return; }
+  if (raw.length === 0) { alert('No addresses found.'); return; }
+
+  var loaded = [];
+  for (var i = 0; i < raw.length; i++) {
+    var a = raw[i];
+    var lat = a.lat != null ? parseFloat(a.lat) : null;
+    var lng = a.lng != null ? parseFloat(a.lng) : null;
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) continue;
+    loaded.push({
+      id: a.id || String(i + 1),
+      address: a.address || a.name || '',
+      city: a.city || '',
+      plz: a.plz ? String(a.plz).padStart(5, '0') : (a.postal_code ? String(a.postal_code).padStart(5, '0') : ''),
+      group: dotsOnly ? 'dots' : 'isochrone',
+      lat: lat,
+      lng: lng
+    });
+  }
+  if (loaded.length === 0) { alert('No usable addresses with valid lat/lng found.'); return; }
+  loadAddresses(loaded, dotsOnly);
+}
+
+function loadAddresses(data, dotsOnly) {
+  state.errors = [];
+  if (dotsOnly) {
+    for (var di = 0; di < data.length; di++) data[di].group = 'dots';
+    state.addresses = state.addresses.concat(data);
+    clearMapOverlays();
+    renderMarkers();
+    renderIsochrones();
+    updateStats();
+    document.getElementById('upload-text').textContent = 'Loaded: ' + state.addresses.length + ' locations (+' + data.length + ' dots)';
+  } else {
+    for (var di = 0; di < data.length; di++) data[di].group = 'isochrone';
+    state.addresses = data;
+    state.isochrones = {};
+    clearMapOverlays();
+    updateStats();
+    updateFetchButton();
+    document.getElementById('upload-text').textContent = 'Loaded: ' + state.addresses.length + ' locations';
+    if (state.apiKey) { fetchAllIsochrones(); } else { renderMarkers(); }
+  }
+}
+
+// ===== ISOCHRONE FETCHING =====
+async function fetchSingleIsochrone(lat, lng, rangeSec) {
+  var resp = await fetch('https://api.openrouteservice.org/v2/isochrones/driving-car', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + state.apiKey, 'Content-Type': 'application/json', 'Accept': 'application/json, application/geo+json' },
+    body: JSON.stringify({ locations: [[lng, lat]], range: [rangeSec], range_type: 'time', units: 'm' })
+  });
+  if (!resp.ok) {
+    var errText = await resp.text().catch(function() { return ''; });
+    var msg = explainHttpError(resp.status, errText);
+    throw new Error(msg);
+  }
+  var data = await resp.json();
+  return (data.features && data.features[0]) || null;
+}
+
+function explainHttpError(status, errText) {
+  var map = {
+    401: 'Invalid ORS API key. Save the correct key in the field above.',
+    403: 'Access denied. Your ORS API key may be invalid or expired.',
+    404: 'ORS endpoint not found. The API URL may have changed.',
+    429: 'Rate limited. Wait a moment and try again (free tier: 500 requests/day).',
+    500: 'ORS server error. Try again later.',
+    503: 'ORS service unavailable. Try again later.'
+  };
+  return map[status] || ('HTTP ' + status + (errText ? ': ' + errText.slice(0, 120) : '') + '. Check your API key and network connection.');
+}
+
+async function fetchAllIsochrones() {
+  if (state.isFetchingIsochrones) return;
+  if (!state.apiKey) { updateStats(); return; }
+  if (state.addresses.length === 0) return;
+  state.isFetchingIsochrones = true;
+  state.cancelRequested = false;
+
+  var targets = [];
+  for (var ai = 0; ai < state.addresses.length; ai++) {
+    var a = state.addresses[ai];
+    if (a.lat == null || a.lng == null) continue;
+    if (a.group === 'dots') continue;
+    targets.push(a);
+  }
+
+  if (targets.length === 0) {
+    state.isFetchingIsochrones = false;
+    renderIsochrones();
+    renderMarkers();
+    updateStats();
+    return;
+  }
+
+  var modal = document.getElementById('modal-overlay'), bar = document.getElementById('progress-bar');
+  var ptext = document.getElementById('progress-text'), title = document.getElementById('modal-title');
+  var desc = document.getElementById('modal-desc'), closeBtn = document.getElementById('modal-close-btn');
+  closeBtn.style.display = 'none';
+  modal.classList.add('active');
+
+  var total = targets.length * 2, completed = 0, failed = 0;
+  var BETWEEN_MS = 4000;
+  var ranges = [{ sec: 1800, label: '30-min' }, { sec: 1200, label: '20-min' }];
+
+  async function fetchRange(sec, label) {
+    title.textContent = 'Fetching ' + label + ' Isochrones';
+    desc.textContent = 'Phase: ' + label + ' — 0 / ' + targets.length;
+    for (var i = 0; i < targets.length && !state.cancelRequested; i++) {
+      var addr = targets[i];
+      try {
+        var cached = getCachedIsochrone(addr);
+        var existing = cached && ((sec === 1800) ? cached.iso30 : cached.iso20);
+        if (existing) {
+          if (!state.isochrones[addr.id]) state.isochrones[addr.id] = {};
+          if (sec === 1800) state.isochrones[addr.id].iso30 = existing;
+          else state.isochrones[addr.id].iso20 = existing;
+        } else {
+          var feat = await fetchSingleIsochrone(addr.lat, addr.lng, sec);
+          if (!state.isochrones[addr.id]) state.isochrones[addr.id] = {};
+          if (sec === 1800) state.isochrones[addr.id].iso30 = feat;
+          else state.isochrones[addr.id].iso20 = feat;
+          updateCachedIsochrone(addr, sec, feat);
+        }
+      } catch(e) {
+        failed++;
+        state.errors.push({ row: 0, name: addr.address || addr.id, lat: addr.lat.toFixed(5), lng: addr.lng.toFixed(5), type: label + ' failed', detail: e.message });
+      }
+      completed++;
+      bar.style.width = (completed / total * 100) + '%';
+      ptext.textContent = completed + ' / ' + total + ' (' + failed + ' failed)';
+      if (i + 1 < targets.length && !state.cancelRequested) {
+        await new Promise(function(r2) { setTimeout(r2, BETWEEN_MS); });
+      }
+    }
+  }
+
+  await fetchRange(1800, '30-min');
+  if (!state.cancelRequested) {
+    title.textContent = 'Pausing before 20-min phase…';
+    await new Promise(function(r2) { setTimeout(r2, 10000); });
+  }
+  await fetchRange(1200, '20-min');
+
+  state.isFetchingIsochrones = false;
+  title.textContent = state.cancelRequested ? 'Cancelled' : 'Isochrones Complete';
+  desc.innerHTML = completed + ' processed' + (failed > 0 ? ', ' + failed + ' failed' : '') + '.';
+  closeBtn.style.display = 'block';
+  closeBtn.onclick = function() {
+    modal.classList.remove('active');
+    renderIsochrones();
+    renderMarkers();
+    updateStats();
+    if (state.errors.length > 0) showErrors();
+  };
+}
+
+// ===== RENDER =====
+function clearMapOverlays() {
+  if (state.markerLayer) { state.map.removeLayer(state.markerLayer); state.markerLayer = null; }
+  if (state.isochroneLayer) { state.map.removeLayer(state.isochroneLayer); state.isochroneLayer = null; }
+}
+
+function renderMarkers() {
+  if (state.markerLayer) state.map.removeLayer(state.markerLayer);
+  var features = [];
+  for (var ai = 0; ai < state.addresses.length; ai++) {
+    var a = state.addresses[ai];
+    if (a.lat == null || a.lng == null) continue;
+    features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [a.lng, a.lat] }, properties: a });
+  }
+
+  state.markerLayer = L.geoJSON({ type: 'FeatureCollection', features: features }, {
+    pointToLayer: function(feat, latlng) {
+      return L.circleMarker(latlng, { radius: 2, fillColor: '#2a2a2a', color: '#2a2a2a', weight: 0, fillOpacity: 1 });
+    },
+    onEachFeature: function(feat, layer) {
+      var a = feat.properties;
+      var popup = '<div style="min-width:180px;"><strong>#' + a.id + '</strong>';
+      if (a.address) popup += '<br><b>Name:</b> ' + a.address;
+      if (a.plz) popup += '<br><b>PLZ:</b> ' + a.plz;
+      popup += '<br><b>Type:</b> ' + (a.group === 'dots' ? 'Dot only' : 'Isochrone');
+      if (state.isochrones[a.id]) popup += '<br><b>Isochrone:</b> Fetched';
+      popup += '<br><b>Lat:</b> ' + a.lat.toFixed(4) + '<br><b>Lng:</b> ' + a.lng.toFixed(4);
+      popup += '</div>';
+      layer.bindPopup(popup);
+    }
+  }).addTo(state.map);
+}
+
+function renderIsochrones() {
+  if (state.isochroneLayer) state.map.removeLayer(state.isochroneLayer);
+  state.isochroneLayer = L.layerGroup();
+  for (var ai = 0; ai < state.addresses.length; ai++) {
+    var a = state.addresses[ai];
+    if (a.lat == null || a.lng == null) continue;
+    if (a.group === 'dots') continue;
+    var iso = state.isochrones[a.id];
+    if (!iso) continue;
+    if (iso.iso30) L.geoJSON(iso.iso30, { style: { color: '#cc3333', fillColor: '#cc3333', fillOpacity: 0.33, weight: 1, opacity: 0.33 } }).addTo(state.isochroneLayer);
+    if (iso.iso20) L.geoJSON(iso.iso20, { style: { color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.63, weight: 1, opacity: 0.63 } }).addTo(state.isochroneLayer);
+  }
+  state.isochroneLayer.addTo(state.map);
+}
+
+// ===== STATS =====
+function updateStats() {
+  if (state.addresses.length === 0) {
+    document.getElementById('stats').textContent = 'No data loaded.';
+    return;
+  }
+  var total = state.addresses.length;
+  var isoCount = Object.keys(state.isochrones).length;
+  var dotCount = state.addresses.filter(function(a) { return a.group === 'dots'; }).length;
+  var mainCount = total - dotCount;
+  var failed = state.errors.length;
+
+  var html = '<strong>' + total + '</strong> locations'
+    + (mainCount > 0 ? ' (' + mainCount + ' isochrone' + (dotCount > 0 ? ', ' + dotCount + ' dots-only' : '') + ')' : '')
+    + (isoCount > 0 ? ' | isochrones: ' + isoCount + '/' + mainCount : '')
+    + (failed > 0 ? ' | <span style="color:#e88;">' + failed + ' failed</span>' : '');
+
+  if (state.errors.length > 0) {
+    html += ' | <span class="error-link" onclick="showErrors()">' + state.errors.length + ' error(s)</span>';
+  }
+  document.getElementById('stats').innerHTML = html;
+}
+
+// ===== ERRORS =====
+function showErrors() {
+  var tbody = document.getElementById('error-tbody');
+  tbody.innerHTML = '';
+  for (var ei = 0; ei < state.errors.length; ei++) {
+    var err = state.errors[ei];
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (err.row || '-') + '</td><td>' + (err.name || '-') + '</td><td>' + (err.lat || '-') + '</td><td>' + (err.lng || '-') + '</td><td>' + err.type + '</td><td>' + err.detail + '</td>';
+    tbody.appendChild(tr);
+  }
+  document.getElementById('error-overlay').classList.add('active');
+}
+
+document.getElementById('error-overlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+
+// ===== TEMPLATES =====
+function downloadTemplate(fmt) {
+  if (fmt === 'csv' || fmt === 'csv-dots') {
+    var csv = 'name;lat;lng\n'
+      + 'Location 1;52.5200;13.4050\n'
+      + 'Location 2;53.5511;9.9937\n'
+      + 'Location 3;48.1351;11.5820\n';
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fmt === 'csv-dots' ? 'template_dots.csv' : 'template.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } else {
+    var template = [
+      { name: "Location 1", lat: 52.5200, lng: 13.4050 },
+      { name: "Location 2", lat: 53.5511, lng: 9.9937 },
+      { name: "Location 3", lat: 48.1351, lng: 11.5820 }
+    ];
+    var blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fmt === 'json-dots' ? 'template_dots.json' : 'template.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+}
+
+// ===== RESET =====
+function resetAll() {
+  clearMapOverlays();
+  state.addresses = []; state.errors = []; state.isochrones = {};
+  uploadZone.classList.remove('has-data');
+  document.getElementById('upload-text').textContent = 'Drop your address CSV or JSON here, or click to browse';
+  document.getElementById('stats').textContent = 'No data loaded.';
+  updateFetchButton();
+}
+
+// ===== START =====
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

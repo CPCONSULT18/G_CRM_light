@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Reports — LeadFlow{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+<p class="mb"><a class="btn" href="{{ url_for('reports.export_today') }}">Export today's outcomes (CSV)</a></p>
+
+<div class="grid-2">
+  <div>
+    <h2>Pipeline</h2>
+    <table>
+      <tr><th>Status</th><th>Count</th></tr>
+      {% for p in pipeline %}
+      <tr><td>{{ p.status }}</td><td>{{ p.n }}</td></tr>
+      {% endfor %}
+    </table>
+
+    <h2>Callbacks due</h2>
+    {% if callbacks_due %}
+    <table>
+      <tr><th>Due</th><th>Company</th></tr>
+      {% for c in callbacks_due %}
+      <tr><td>{{ c.due_date }}</td><td><a href="{{ url_for('leads.lead_detail', lead_id=c.lead_id) }}">{{ c.company_name }}</a></td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">None.</p>{% endif %}
+  </div>
+  <div>
+    <h2>Activity by day</h2>
+    {% if by_day %}
+    <table>
+      <tr><th>Day</th><th>Type</th><th>Count</th><th>Appointments</th></tr>
+      {% for d in by_day %}
+      <tr><td>{{ d.day }}</td><td>{{ d.type }}</td><td>{{ d.n }}</td><td>{{ d.appts }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">No activity.</p>{% endif %}
+
+    <h2>By region</h2>
+    {% if by_region %}
+    <table>
+      <tr><th>Region</th><th>Calls</th><th>Appointments</th><th>Not interested</th></tr>
+      {% for r in by_region %}
+      <tr><td>{{ r.region or '—' }}</td><td>{{ r.calls }}</td><td>{{ r.appts }}</td><td>{{ r.not_int }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">No calls.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

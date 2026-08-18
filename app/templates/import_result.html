@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Import result — LeadFlow{% endblock %}
+{% block content %}
+<h1>Import result</h1>
+<div class="stat-grid">
+  <div class="stat"><div class="num">{{ stats.rows }}</div><div class="lbl">Rows</div></div>
+  <div class="stat"><div class="num">{{ stats.companies_created }}</div><div class="lbl">Companies</div></div>
+  <div class="stat"><div class="num">{{ stats.locations_created }}</div><div class="lbl">Locations</div></div>
+  <div class="stat"><div class="num">{{ stats.contacts_created }}</div><div class="lbl">Contacts</div></div>
+  <div class="stat"><div class="num">{{ stats.leads_created }}</div><div class="lbl">Leads</div></div>
+</div>
+
+{% if stats.errors %}
+<h2>Skipped / errors</h2>
+<ul class="muted">
+  {% for e in stats.errors %}<li>{{ e }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% if match_summary %}
+<h2>Dedup matching</h2>
+<p>
+  Scanned {{ match_summary.leads_scanned }} leads → {{ match_summary.matched }} signals
+  (<span class="badge hard">hard {{ match_summary.by_confidence.hard }}</span>
+   <span class="badge probable">probable {{ match_summary.by_confidence.probable }}</span>
+   <span class="badge soft">soft {{ match_summary.by_confidence.soft }}</span>)
+</p>
+{% endif %}
+
+<p class="mt"><a class="btn" href="{{ url_for('leads.list_leads') }}">View leads</a>
+<a class="btn" href="{{ url_for('imports.match_review') }}">Review matches</a></p>
+{% endblock %}
