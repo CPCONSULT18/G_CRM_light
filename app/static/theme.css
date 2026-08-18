@@ -243,3 +243,25 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 /* Map */
 #map { height: 560px; width: 100%; background: var(--bg); }
 .leaflet-container { background: var(--bg); }
+
+/* Sidebar footer (user + sign out) */
+.sidebar { display: flex; flex-direction: column; }
+.sidebar-footer { margin-top: auto; padding-top: 1.4rem; border-top: 1px solid var(--hairline); }
+.sidebar-footer .btn { margin-top: 0.6rem; }
+
+/* Auth (login) page */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg-raised);
+  padding: 2.4rem 2.2rem;
+}
+.auth-card .brand { margin-bottom: 1rem; }
+.auth-card input { max-width: 100%; }

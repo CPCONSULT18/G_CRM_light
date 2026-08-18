@@ -42,6 +42,7 @@
 
 <h2>Log outcome</h2>
 <form method="post" action="{{ url_for('leads.log_outcome', lead_id=lead.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="outcomes">
     <button type="submit" name="outcome" value="called" class="outcome-btn">Called</button>
     <button type="submit" name="outcome" value="not_interested" class="outcome-btn">Not interested</button>

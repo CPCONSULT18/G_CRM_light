@@ -1,8 +1,25 @@
 from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from .. import gmail_service
 from ..db import get_db, get_setting, set_setting
 from . import settings_bp
+
+
+def _admin_required():
+    return current_user.is_authenticated and current_user.is_admin
+
+
+def _deny():
+    flash("Admin access required.")
+    return redirect(url_for("main.index"))
+
+
+@settings_bp.before_request
+@login_required
+def _guard():
+    if not _admin_required():
+        return _deny()
 
 
 @settings_bp.route("/settings", methods=["GET", "POST"])

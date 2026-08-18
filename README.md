@@ -1,11 +1,22 @@
 # G_CRM_light — LeadFlow CRM
 
-Self-hosted, single-user light CRM for cold outreach: CSV import (blocklist + sourced leads), relational database, auto-dedup matching, daily call queue with reminders, one-tap outcome logging, light reporting, and a Germany map module (geocoding + driving isochrones).
+Self-hosted light CRM for cold outreach: CSV import (blocklist + sourced leads), relational database, auto-dedup matching, daily call queue with reminders, one-tap outcome logging, light reporting, a Germany map module (geocoding + driving isochrones), login + user profiles, and HTTPS.
 
-## Quick start
+## Quick start (dev)
 1. `pip install -r requirements.txt`
-2. `start.bat`
-3. Open `http://localhost:5000`
+2. `python run.py` (first run creates the DB; then `python -m flask --app run.py create-user --email you@x.com --name YourName --role admin` to create the first account)
+3. Open `http://localhost:5000` and sign in.
+
+## Production / LAN (HTTPS)
+1. Install Caddy (e.g. `winget install CaddyServer.Caddy`).
+2. `start-secure.bat` — starts Waitress (`serve.py`, 127.0.0.1:5000) + Caddy reverse proxy with a locally-trusted cert.
+3. Open `https://localhost:4443` (trust the local Caddy root CA the first time). Other devices on the LAN use `https://<this-machine>:4443`.
+4. Going public: in `Caddyfile` replace `https://localhost:4443` + `tls internal` with your domain + `tls` (Let's Encrypt) and open 443.
+
+## Users & roles
+- `flask create-user` (or the Users page, admin-only) creates accounts. Roles: **admin** (everything) and **user** (only leads where `responsible` == their display name).
+- Login is rate-limited Maptool-V3 style (~15 attempts/min); after overflow an account locks for 15 min. Admins can unlock in Users.
+- Gmail OAuth in Settings is admin-only; its redirect URI is now `https://<host>:4443/gmail/callback`.
 
 ## Docs
 - `implementation_blueprint.md` — the full plan

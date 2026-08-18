@@ -3,6 +3,7 @@ import io
 
 from flask import Response, render_template
 
+from ..auth import visibility_where
 from ..db import get_db
 from . import reports_bp
 
@@ -10,6 +11,9 @@ from . import reports_bp
 @reports_bp.route("/reports")
 def reports_page():
     db = get_db()
+    cond, params = visibility_where("l")
+    scope = f" AND {cond}" if cond else ""
+    scope_lead = f" WHERE {cond}" if cond else ""
 
     today = db.execute("SELECT date('now') d").fetchone()["d"]
 
@@ -20,22 +24,27 @@ def reports_page():
                SUM(CASE WHEN outcome='not_interested' THEN 1 ELSE 0 END) AS not_int,
                SUM(CASE WHEN outcome='callback' THEN 1 ELSE 0 END) AS callbacks,
                SUM(CASE WHEN outcome='won' THEN 1 ELSE 0 END) AS won
-        FROM activities
-        WHERE type='call' AND date(occurred_at) = ?
-        """,
-        (today,),
+        FROM activities a JOIN leads l ON l.id = a.lead_id
+        WHERE a.type='call' AND date(a.occurred_at) = ?
+        """
+        + scope,
+        [today] + params,
     ).fetchone()
 
     by_day = db.execute(
         """
-        SELECT date(occurred_at) AS day, type,
+        SELECT date(a.occurred_at) AS day, a.type,
                COUNT(*) AS n,
-               SUM(CASE WHEN outcome='appointment_booked' THEN 1 ELSE 0 END) AS appts
-        FROM activities
-        GROUP BY day, type
+               SUM(CASE WHEN a.outcome='appointment_booked' THEN 1 ELSE 0 END) AS appts
+        FROM activities a JOIN leads l ON l.id = a.lead_id
+        """
+        + scope_lead
+        + """
+        GROUP BY day, a.type
         ORDER BY day DESC
         LIMIT 30
-        """
+        """,
+        params,
     ).fetchall()
 
     by_region = db.execute(
@@ -47,15 +56,18 @@ def reports_page():
         FROM activities a
         JOIN leads l ON l.id = a.lead_id
         WHERE a.type = 'call'
+        """
+        + scope
+        + """
         GROUP BY region
         ORDER BY calls DESC
-        """
+        """,
+        params,
     ).fetchall()
 
     pipeline = db.execute(
-        """
-        SELECT status, COUNT(*) AS n FROM leads GROUP BY status ORDER BY n DESC
-        """
+        "SELECT status, COUNT(*) AS n FROM leads l" + scope_lead + " GROUP BY status ORDER BY n DESC",
+        params,
     ).fetchall()
 
     callbacks_due = db.execute(
@@ -65,8 +77,12 @@ def reports_page():
         JOIN leads l ON l.id = a.lead_id
         JOIN companies c ON c.id = l.company_id
         WHERE a.status='open' AND a.due_date IS NOT NULL
-        ORDER BY a.due_date
         """
+        + scope
+        + """
+        ORDER BY a.due_date
+        """,
+        params,
     ).fetchall()
 
     return render_template(
@@ -83,6 +99,8 @@ def reports_page():
 @reports_bp.route("/reports/export/today")
 def export_today():
     db = get_db()
+    cond, params = visibility_where("l")
+    scope = f" AND {cond}" if cond else ""
     rows = db.execute(
         """
         SELECT date(a.occurred_at) AS day, a.outcome, a.type, a.notes,
@@ -91,8 +109,12 @@ def export_today():
         JOIN leads l ON l.id = a.lead_id
         JOIN companies c ON c.id = l.company_id
         WHERE date(a.occurred_at) = date('now')
-        ORDER BY a.occurred_at
         """
+        + scope
+        + """
+        ORDER BY a.occurred_at
+        """,
+        params,
     ).fetchall()
 
     buf = io.StringIO()

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Users — LeadFlow{% endblock %}
+{% block content %}
+<h1>Users</h1>
+
+<div class="card">
+  <h3>Create user</h3>
+  <form method="post" action="{{ url_for('users.create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Email</label>
+    <input type="email" name="email" required autocomplete="off">
+    <label>Display name (shown as "Responsible")</label>
+    <input type="text" name="display_name" placeholder="e.g. Lei">
+    <label>Role</label>
+    <select name="role">
+      <option value="user">user</option>
+      <option value="admin">admin</option>
+    </select>
+    <label>Password (min 8 chars)</label>
+    <input type="password" name="password" required minlength="8" autocomplete="new-password">
+    <p class="mt"><button type="submit" class="btn primary">Create user</button></p>
+  </form>
+</div>
+
+{% if users %}
+<table>
+  <tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr>
+  {% for u in users %}
+  <tr>
+    <td>{{ u.email }}</td>
+    <td>{{ u.display_name or '—' }}</td>
+    <td>{{ u.role }}</td>
+    <td>
+      {% if u.is_active %}
+        <span class="badge ok">active</span>
+      {% else %}
+        <span class="badge">disabled</span>
+      {% endif %}
+      {% if u.locked_until %}<span class="badge hard">locked</span>{% endif %}
+    </td>
+    <td class="muted">{{ u.last_login or '—' }}</td>
+    <td>
+      <form method="post" action="{{ url_for('users.toggle', user_id=u.id) }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn small">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+      </form>
+      {% if u.locked_until %}
+      <form method="post" action="{{ url_for('users.unlock', user_id=u.id) }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn small">Unlock</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('users.reset_password', user_id=u.id) }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="password" name="password" placeholder="new password" minlength="8" required style="width:140px">
+        <button type="submit" class="btn small">Reset pw</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No users yet. Create the first account above.</p>
+{% endif %}
+{% endblock %}

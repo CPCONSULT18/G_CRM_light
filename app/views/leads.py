@@ -1,5 +1,7 @@
 from flask import Response, redirect, render_template, request, url_for
+from flask_login import current_user
 
+from ..auth import visibility_where
 from ..db import get_db
 from . import leads_bp
 
@@ -21,6 +23,11 @@ def _lead_query(filters):
         JOIN companies c ON c.id = l.company_id
     """
     conds, params = [], []
+
+    vis_cond, vis_params = visibility_where("l")
+    if vis_cond:
+        conds.append(vis_cond)
+        params += vis_params
 
     if region:
         conds.append("(l.region LIKE ? OR c.region LIKE ?)")
@@ -53,8 +60,11 @@ def list_leads():
     sql, params = _lead_query(filters)
     leads = db.execute(sql, params).fetchall()
 
+    vis_cond, vis_params = visibility_where("l")
+    region_where = f" WHERE region IS NOT NULL AND region != ''{(' AND ' + vis_cond) if vis_cond else ''}"
     regions = db.execute(
-        "SELECT DISTINCT region FROM leads WHERE region IS NOT NULL AND region != '' ORDER BY region"
+        "SELECT DISTINCT region FROM leads l" + region_where + " ORDER BY region",
+        vis_params,
     ).fetchall()
 
     return render_template(
@@ -68,13 +78,19 @@ def list_leads():
 @leads_bp.route("/leads/<int:lead_id>")
 def lead_detail(lead_id):
     db = get_db()
+    vis_cond, vis_params = visibility_where("l")
+    where = "l.id = ?"
+    params = [lead_id]
+    if vis_cond:
+        where += f" AND {vis_cond}"
+        params += vis_params
     lead = db.execute(
-        """
+        f"""
         SELECT l.*, c.name AS company_name, c.region AS company_region
         FROM leads l JOIN companies c ON c.id = l.company_id
-        WHERE l.id = ?
+        WHERE {where}
         """,
-        (lead_id,),
+        params,
     ).fetchone()
     if lead is None:
         return "Lead not found", 404
@@ -116,6 +132,18 @@ def log_outcome(lead_id):
     notes = request.form.get("notes", "").strip() or None
 
     db = get_db()
+    vis_cond, vis_params = visibility_where("l")
+    where = "l.id = ?"
+    params = [lead_id]
+    if vis_cond:
+        where += f" AND {vis_cond}"
+        params += vis_params
+    owned = db.execute(
+        f"SELECT l.id FROM leads l WHERE {where}", params
+    ).fetchone()
+    if owned is None:
+        return "Lead not found", 404
+
     db.execute(
         "INSERT INTO activities (lead_id, type, outcome, notes, due_date, status) "
         "VALUES (?, 'call', ?, ?, ?, ?)",

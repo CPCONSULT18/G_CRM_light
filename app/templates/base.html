@@ -14,12 +14,25 @@
       <a href="{{ url_for('main.index') }}" {% if request.endpoint == 'main.index' %}class="active"{% endif %}>Dashboard</a>
       <a href="{{ url_for('main.today') }}" {% if request.endpoint == 'main.today' %}class="active"{% endif %}>Today</a>
       <a href="{{ url_for('leads.list_leads') }}" {% if request.endpoint and request.endpoint.startswith('leads.') %}class="active"{% endif %}>Leads</a>
+      {% if current_user.is_authenticated and current_user.is_admin %}
       <a href="{{ url_for('imports.import_page') }}" {% if request.endpoint and request.endpoint.startswith('imports.') %}class="active"{% endif %}>Import</a>
       <a href="{{ url_for('imports.match_review') }}" {% if request.endpoint == 'imports.match_review' %}class="active"{% endif %}>Matches</a>
+      {% endif %}
       <a href="{{ url_for('map.map_page') }}" {% if request.endpoint and request.endpoint.startswith('map.') %}class="active"{% endif %}>Map</a>
       <a href="{{ url_for('reports.reports_page') }}" {% if request.endpoint and request.endpoint.startswith('reports.') %}class="active"{% endif %}>Reports</a>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+      <a href="{{ url_for('users.list_users') }}" {% if request.endpoint and request.endpoint.startswith('users.') %}class="active"{% endif %}>Users</a>
       <a href="{{ url_for('settings.settings_page') }}" {% if request.endpoint and request.endpoint.startswith('settings.') %}class="active"{% endif %}>Settings</a>
+      {% endif %}
     </nav>
+    <div class="sidebar-footer">
+      <div class="small muted">{{ current_user.display_name }}{% if current_user.is_admin %} · admin{% endif %}</div>
+      <div class="small mb"><a href="{{ url_for('users.profile') }}">Profile</a></div>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn small">Sign out</button>
+      </form>
+    </div>
   </aside>
   <main class="content">
     {% with messages = get_flashed_messages() %}

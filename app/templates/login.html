@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — LeadFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">LeadFlow<span class="dot">.</span></div>
+    <p class="muted small mb">Sign in to continue</p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flashes">
+          {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Email</label>
+      <input type="email" name="email" required autofocus autocomplete="username">
+      <label>Password</label>
+      <input type="password" name="password" required autocomplete="current-password">
+      <p class="mt"><button type="submit" class="btn primary" style="width:100%">Sign in</button></p>
+    </form>
+  </div>
+</div>
+</body>
+</html>

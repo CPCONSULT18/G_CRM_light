@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Profile — LeadFlow{% endblock %}
+{% block content %}
+<h1>Profile</h1>
+
+{% if error %}<div class="flash" style="border-color: var(--danger);">{{ error }}</div>{% endif %}
+{% if ok %}<div class="flash">{{ ok }}</div>{% endif %}
+
+<form method="post" action="{{ url_for('users.profile') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Email</label>
+  <input type="email" value="{{ current_user.email }}" disabled>
+  <label>Display name (shown as "Responsible")</label>
+  <input type="text" name="display_name" value="{{ current_user.display_name }}">
+  <label>Current password</label>
+  <input type="password" name="current_password" autocomplete="current-password">
+  <label>New password (leave blank to keep)</label>
+  <input type="password" name="new_password" minlength="8" autocomplete="new-password">
+  <p class="mt"><button type="submit" class="btn primary">Save</button></p>
+</form>
+
+<p class="small muted mt">Role: <span class="badge">{{ current_user.role }}</span></p>
+{% endblock %}

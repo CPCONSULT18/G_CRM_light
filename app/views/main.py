@@ -1,24 +1,51 @@
 from flask import render_template
 
+from ..auth import visibility_where
 from ..db import get_db
 from . import main_bp
+
+
+def _scope(alias="l"):
+    """Returns (cond_sql, params) scoping to current user's visible leads.
+
+    cond_sql is a bare condition (no WHERE/AND prefix) or empty string.
+    """
+    return visibility_where(alias)
 
 
 @main_bp.route("/")
 def index():
     db = get_db()
 
-    total_leads = db.execute("SELECT COUNT(*) c FROM leads").fetchone()["c"]
+    leads_cond, leads_params = _scope("l")
+    where = f" WHERE {leads_cond}" if leads_cond else ""
+    and_ = f" AND {leads_cond}" if leads_cond else ""
+
+    total_leads = db.execute(
+        "SELECT COUNT(*) c FROM leads l" + where, leads_params
+    ).fetchone()["c"]
     open_callbacks = db.execute(
-        "SELECT COUNT(*) c FROM activities WHERE status='open' AND due_date IS NOT NULL"
+        "SELECT COUNT(*) c FROM activities a JOIN leads l ON l.id = a.lead_id"
+        + where
+        + " AND a.status='open' AND a.due_date IS NOT NULL",
+        leads_params,
     ).fetchone()["c"]
     appointments = db.execute(
-        "SELECT COUNT(*) c FROM activities WHERE outcome='appointment_booked'"
+        "SELECT COUNT(*) c FROM activities a JOIN leads l ON l.id = a.lead_id"
+        + where
+        + " AND a.outcome='appointment_booked'",
+        leads_params,
     ).fetchone()["c"]
     hard_matches = db.execute(
-        "SELECT COUNT(DISTINCT lead_id) c FROM matches WHERE confidence='hard'"
+        "SELECT COUNT(DISTINCT m.lead_id) c FROM matches m JOIN leads l ON l.id = m.lead_id"
+        + where
+        + " AND m.confidence='hard'",
+        leads_params,
     ).fetchone()["c"]
-    total_companies = db.execute("SELECT COUNT(*) c FROM companies").fetchone()["c"]
+    total_companies = db.execute(
+        "SELECT COUNT(DISTINCT l.company_id) c FROM leads l" + where,
+        leads_params,
+    ).fetchone()["c"]
 
     recent = db.execute(
         """
@@ -26,9 +53,13 @@ def index():
         FROM activities a
         JOIN leads l ON l.id = a.lead_id
         JOIN companies c ON c.id = l.company_id
+        """
+        + where
+        + """
         ORDER BY a.occurred_at DESC
         LIMIT 10
-        """
+        """,
+        leads_params,
     ).fetchall()
 
     return render_template(
@@ -46,6 +77,8 @@ def index():
 def today():
     db = get_db()
     today = db.execute("SELECT date('now') d").fetchone()["d"]
+    leads_cond, leads_params = _scope("l")
+    and_ = f" AND {leads_cond}" if leads_cond else ""
 
     # Open callbacks due on or before today.
     callbacks = db.execute(
@@ -60,9 +93,12 @@ def today():
         JOIN leads l ON l.id = a.lead_id
         JOIN companies c ON c.id = l.company_id
         WHERE a.status = 'open' AND a.due_date IS NOT NULL AND a.due_date <= ?
+        """
+        + and_
+        + """
         ORDER BY a.due_date
         """,
-        (today,),
+        [today] + leads_params,
     ).fetchall()
 
     # Fresh leads (status new/called/no_answer/voicemail) that are NOT hard-matched,
@@ -78,6 +114,9 @@ def today():
         FROM leads l
         JOIN companies c ON c.id = l.company_id
         WHERE l.status IN ('new', 'called', 'no_answer', 'voicemail')
+        """
+        + and_
+        + """
           AND NOT EXISTS (
               SELECT 1 FROM matches m
               WHERE m.lead_id = l.id AND m.confidence = 'hard'
@@ -87,7 +126,8 @@ def today():
               WHERE a.lead_id = l.id AND a.outcome = 'replied'
           )
         ORDER BY l.region, l.created_at
-        """
+        """,
+        leads_params,
     ).fetchall()
 
     return render_template("today.html", callbacks=callbacks, fresh=fresh, today=today)

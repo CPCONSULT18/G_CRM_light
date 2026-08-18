@@ -3,8 +3,8 @@ import time
 
 from flask import Response, flash, redirect, render_template, request, url_for
 
+from ..auth import visibility_where
 from ..db import get_db, get_setting
-from ..normalize import norm_phone
 from . import map_bp
 
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
@@ -14,23 +14,42 @@ ORS_BATCH_SIZE = 5
 ORS_BATCH_PAUSE = 15
 
 
+def _location_scope(alias="l"):
+    """Returns an EXISTS(...) condition restricting companies to visible leads."""
+    cond, params = visibility_where(alias)
+    if not cond:
+        return "", []
+    return (
+        f" AND EXISTS (SELECT 1 FROM leads {alias} WHERE {alias}.company_id = c.id "
+        f"AND {cond})",
+        params,
+    )
+
+
 @map_bp.route("/map")
 def map_page():
     db = get_db()
+    scope_sql, scope_params = _location_scope()
     locations = db.execute(
         """
         SELECT o.id, o.address, o.city, o.plz, o.lat, o.lng, o.geocode_status,
                c.name AS company_name
         FROM locations o JOIN companies c ON c.id = o.company_id
         WHERE o.lat IS NOT NULL AND o.lng IS NOT NULL
-        ORDER BY c.name
         """
+        + scope_sql
+        + """
+        ORDER BY c.name
+        """,
+        scope_params,
     ).fetchall()
     pending_geocode = db.execute(
         """
-        SELECT COUNT(*) c FROM locations
-        WHERE (lat IS NULL OR lng IS NULL) AND (address IS NOT NULL AND address != '')
+        SELECT COUNT(*) c FROM locations o JOIN companies c ON c.id = o.company_id
+        WHERE (o.lat IS NULL OR o.lng IS NULL) AND (o.address IS NOT NULL AND o.address != '')
         """
+        + scope_sql,
+        scope_params,
     ).fetchone()["c"]
     return render_template(
         "map.html",
@@ -43,6 +62,7 @@ def map_page():
 @map_bp.route("/map/locations")
 def map_locations():
     db = get_db()
+    scope_sql, scope_params = _location_scope()
     locations = db.execute(
         """
         SELECT o.id, o.address, o.city, o.plz, o.lat, o.lng, o.geocode_status, o.iso_json,
@@ -50,6 +70,8 @@ def map_locations():
         FROM locations o JOIN companies c ON c.id = o.company_id
         WHERE o.lat IS NOT NULL AND o.lng IS NOT NULL
         """
+        + scope_sql,
+        scope_params,
     ).fetchall()
     payload = []
     for loc in locations:

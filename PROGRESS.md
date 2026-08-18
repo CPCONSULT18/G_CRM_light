@@ -4,7 +4,7 @@
 > Updated at the end of every working session. **Any agent: read this file first.**
 
 ## Current state
-**Phase 6 (data load) done: all real CSVs imported.** Phases 0, 1, 2, 3, 5 done; Phase 4 coded + mocked-verified (needs real Google Cloud OAuth creds); Phase 7 (docs freeze) pending.
+**Phase 8 (auth, user profiles, HTTPS) done and verified.** Phases 0, 1, 2, 3, 5, 6, 7 done; Phase 4 coded + mocked-verified (needs real Google Cloud OAuth creds).
 
 ## What is done
 - Phase 0 fully: repo cloned, git identity set, MAPTOOL3 heritage copied to `app/map/heritage/`, docs written, scaffold pushed.
@@ -15,6 +15,15 @@
 - **Phase 5 (Reporting) complete**: Today summary badges; activity by day + by region; pipeline counts; callbacks due; EOD export (`;` + BOM, German Excel/SharePoint); leads CSV export honoring filters. Verified.
 - **Phase 4 (Gmail) coded + mocked-verified**: OAuth flow (gmail.readonly, token at `data/gmail_token.json`), reply poller matching sender email/domain to contacts -> `email/replied` activity, dedupe via `activities.gmail_msg_id` (migration added), "Replied" badge on leads/Today, replied leads excluded from Today queue, Connect/Poll/Disconnect in Settings. Verified with mocked API; **needs real Google Cloud OAuth client to test live.**
 - **Phase 6 (data load) done**: all real CSVs imported (see below). `responsible` field added to `leads` (from the `Responsible` column in OriginalG.csv), shown on leads list, lead detail, and leads CSV export.
+- **Phase 8 (auth, user profiles, HTTPS) done and verified**:
+  - Login required app-wide (Flask-Login); `/login`, `/logout`; CSRF on every POST (Flask-WTF, no time limit); session cookie HttpOnly + SameSite=Lax (+ Secure behind proxy).
+  - **Maptool-V3-style login lockout**: sliding-window rate limiter (~15 attempts/min cadence) + persisted per-user lock (15 min) after overflow; admin can unlock in Users page. Configurable in Settings (`login_max_attempts`, `login_window_seconds`, `login_lock_seconds`).
+  - Roles: **admin + user**. Admin-only: Users page (create/disable/unlock/reset pw), Settings (incl. Gmail + wipe), Import/Matches. Normal users see **only their own leads** (visibility = `leads.responsible` equals their display name) on Leads, Today, Dashboard, Reports, Map, and exports; direct access to a foreign lead returns 404.
+  - Profile page (change display name/password); sidebar shows user + Sign out; `flask create-user` CLI bootstrap.
+  - `users` table added (schema in `app/db.py`; migration not needed, table is new). SECRET_KEY auto-generated to `data/secret_key` (or env `LEADFLOW_SECRET`), never hardcoded.
+  - **HTTPS**: `serve.py` (Waitress, 127.0.0.1:5000) + `Caddyfile` (Caddy reverse proxy, `tls internal`, https://localhost:4443) + `start-secure.bat`. ProxyFix (Werkzeug) so Flask builds correct https URLs (Gmail OAuth redirect URI). Plain HTTP rejected (400).
+  - Fixed "pages show nothing": the app only bound 127.0.0.1:5000; behind Caddy it's reachable on the LAN at `https://<host>:4443`.
+  - Verified live: anon -> redirect to login; admin + user logins; lockout after 16 failed attempts (correct pw blocked while locked, persisted); CSRF 400 on tokenless POST; all 12 routes 200 as admin; scoped views for user (116/1054 leads, foreign lead 404); HTTPS login + Secure cookie + dashboard; dev `run.py` still works on plain HTTP.
 
 ## Phase 6 import summary
 - Imported (idempotent, source labels = clear file names):
@@ -27,11 +36,12 @@
 - Encoding note: OriginalG.csv is latin-1 (umlauts decode correctly); other files are UTF-8 with BOM.
 
 ## Where we stopped
-- Phase 6 imported and verified; Phase 7 (docs freeze) done. Remaining: Phase 4 live Gmail test (needs Google Cloud creds), then any future/roadmap work.
+- Phase 8 done and verified (auth, user profiles, HTTPS). Remaining: Phase 4 live Gmail test (needs Google Cloud creds), then any future/roadmap work.
 
 ## What is next (in order)
-1. **Phase 4 live**: user creates Google Cloud OAuth client (Desktop app, scope gmail.readonly), pastes Client ID/Secret in Settings -> Connect -> Poll. Steps documented in README/blueprint §8.
-2. Roadmap — deferred items (blueprint §15): acquisition pipeline tracking, isochrone-based blocking.
+1. **Phase 4 live**: user creates Google Cloud OAuth client (Desktop app, scope gmail.readonly), pastes Client ID/Secret in Settings -> Connect -> Poll. Steps documented in README/blueprint §8. (Auth/HTTPS is in place; the callback redirect URI is now `https://<host>:4443/gmail/callback`.)
+2. **HTTPS hardening when going to internet/VPS**: change Caddyfile from `https://localhost:4443` + `tls internal` to the real domain + `tls` (Let's Encrypt), open 443, keep Waitress on 127.0.0.1:5000.
+3. Roadmap — deferred items (blueprint §15): acquisition pipeline tracking, isochrone-based blocking.
 
 ## Blockers
 - Gmail live test needs Google Cloud OAuth client (user action).
@@ -48,6 +58,9 @@
 - Lead = one row in the dealer CSV; company = unique Investor (Group) name.
 - `responsible` (owner) comes from the `Responsible` column of OriginalG.csv only; research files leave it empty.
 - `OriginalG.csv` is the "other" master file (not the user's research); research files carry region-specific source labels.
+- **Auth**: roles are admin + user only. A normal user's visibility = leads where `leads.responsible` == their display name (admin sees all). Set the display name to the exact `Responsible` value when creating users.
+- **Login lockout follows MAPTOOL3 cadence**: sequential attempts, ~15/min sliding window; on overflow the account is locked 15 min (persisted in `users.locked_until`). Settings keys `login_max_attempts`, `login_window_seconds`, `login_lock_seconds`.
+- **Serving**: dev = `python run.py` (plain HTTP localhost). Secure = `start-secure.bat` -> Waitress on 127.0.0.1:5000 behind Caddy (TLS internal, https://localhost:4443). `LEADFLOW_COOKIE_SECURE=1` is set by start-secure.bat only. SECRET_KEY auto-generated to `data/secret_key` or `LEADFLOW_SECRET` env.
 
 ## Deferred (see blueprint §15) — do NOT miss
 - Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.

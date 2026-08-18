@@ -2,11 +2,20 @@ import csv
 import io
 
 from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from ..db import get_db
 from ..importer import detect_delimiter, import_lead_csv, map_columns, parse_contact_cell
 from ..matcher import run_match_all
 from . import import_bp
+
+
+@import_bp.before_request
+@login_required
+def _admin_guard():
+    if not (current_user.is_authenticated and current_user.is_admin):
+        flash("Admin access required.")
+        return redirect(url_for("main.index"))
 
 
 @import_bp.route("/import")

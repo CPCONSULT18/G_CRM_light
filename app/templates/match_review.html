@@ -4,6 +4,7 @@
 <div class="flex" style="justify-content: space-between; align-items: center;">
   <h1>Dedup matches</h1>
   <form method="post" action="{{ url_for('imports.recount_matches') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn">Re-run matching</button>
   </form>
 </div>

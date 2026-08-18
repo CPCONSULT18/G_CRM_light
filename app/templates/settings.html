@@ -4,6 +4,7 @@
 <h1>Settings</h1>
 
 <form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Default country code (phone normalization)</label>
   <input type="text" name="country_code" value="{{ country_code }}">
 
@@ -27,9 +28,11 @@
   {% if gmail_connected %}
     <span class="badge ok">Gmail connected{% if gmail_user %} as {{ gmail_user }}{% endif %}</span>
     <form method="post" action="{{ url_for('settings.gmail_poll') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn">Poll for replies now</button>
     </form>
     <form method="post" action="{{ url_for('settings.gmail_disconnect') }}" onsubmit="return confirm('Disconnect Gmail?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn">Disconnect</button>
     </form>
   {% else %}
@@ -41,6 +44,7 @@
 
 <h2 class="mt">Danger zone</h2>
 <form method="post" action="{{ url_for('settings.data_actions') }}" onsubmit="return confirm('Wipe all CRM data? This cannot be undone.')">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="action" value="wipe">
   <button type="submit" class="btn danger">Wipe CRM data</button>
 </form>

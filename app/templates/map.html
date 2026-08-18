@@ -10,9 +10,11 @@
 
 <div class="flex mb">
   <form method="post" action="{{ url_for('map.geocode') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn">Geocode pending (Nominatim)</button>
   </form>
   <form method="post" action="{{ url_for('map.isochrones') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn primary">Fetch isochrones (rate-limited)</button>
   </form>
 </div>

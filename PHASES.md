@@ -56,6 +56,15 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - [x] Final changelog, PROGRESS handoff, README polish
 - **Acceptance:** `PROGRESS.md` fully describes state for next agent. ✅ Done — docs reflect all phases; deferred items tracked in PROGRESS/PHASES.
 
+## Phase 8 — Auth, user profiles, HTTPS
+- [x] Login/logout app-wide (Flask-Login) + CSRF on every POST (Flask-WTF)
+- [x] Maptool-V3-style login lockout (cadence ~15/min sliding window + persisted per-user lock, admin unlock)
+- [x] Roles admin + user; admin-only Users page (create/disable/unlock/reset), Settings, Import/Matches
+- [x] Per-user lead visibility (`leads.responsible` == display name; admin sees all) across Leads/Today/Dashboard/Reports/Map/exports
+- [x] Profile page (display name + password); `flask create-user` CLI
+- [x] HTTPS: Waitress (`serve.py`) + Caddy reverse proxy (`Caddyfile`, tls internal) + `start-secure.bat`; ProxyFix; Secure cookie behind proxy; SECRET_KEY not hardcoded
+- **Acceptance:** anon redirected to login; wrong-password lockout after ~15 attempts blocks even correct pw; user sees only own leads (foreign lead 404); all routes 200 over https://localhost:4443; dev `run.py` still works. ✅ Verified live (admin + user + lockout + CSRF + HTTPS + visibility).
+
 ## Deferred (see blueprint §15) — do NOT miss
 - [ ] Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.
 - [ ] Blocked leads via isochrones: build our OWN blocklist from the map — flag leads outside our driving-time operating range (ORS 20/30-min isochrones) as `blocked`; threshold setting in Settings; blocked status already excluded from Today.

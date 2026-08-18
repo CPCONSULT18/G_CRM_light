@@ -10,7 +10,7 @@ import requests
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
-from .db import DATA_DIR, get_db, get_setting, set_setting
+from .db import data_dir, db_path, get_db, get_setting, set_setting
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -20,7 +20,7 @@ GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me"
 # ISO-8601 (with timezone) >= this -> treat as reply (created after CRM start).
 MIN_CREATED = "2026-01-01T00:00:00Z"
 
-TOKEN_FILE = DATA_DIR / "gmail_token.json"
+TOKEN_FILE = data_dir() / "gmail_token.json"
 
 
 def token_path():

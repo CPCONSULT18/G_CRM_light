@@ -2,6 +2,16 @@
 
 All notable changes to this project, dated.
 
+## [0.6.0] — 2026-08-18
+- **Phase 8 (auth, user profiles, HTTPS) complete.**
+- **Auth**: login required app-wide (Flask-Login) with `/login` + `/logout`; CSRF (Flask-WTF) on every POST; session cookie HttpOnly + SameSite=Lax (+ Secure behind the TLS proxy). No more open data wipe in Settings.
+- **Login lockout (Maptool-V3 cadence)**: sliding-window rate limiter ~15 attempts/min per email+IP; on overflow the account locks 15 min (persisted in `users.locked_until`, survives restart) and even the correct password is rejected; admin unlock button in Users. Tunable via Settings `login_max_attempts` / `login_window_seconds` / `login_lock_seconds`.
+- **Users & roles**: `users` table (email unique, display_name, password_hash, role, is_active, failed_attempts, locked_until, last_login). Admin-only Users page (create/disable/unlock/reset password), Settings, Import/Matches. `flask create-user --role admin` bootstrap CLI. Profile page (change display name/password).
+- **Lead visibility**: normal users see only leads where `leads.responsible` == their display name, scoped across Leads, Today, Dashboard, Reports, Map, and CSV exports; direct access to a foreign lead returns 404. Admins see everything.
+- **HTTPS**: `serve.py` (Waitress on 127.0.0.1:5000) behind `Caddyfile` reverse proxy (tls internal, https://localhost:4443) + `start-secure.bat`. ProxyFix so Flask builds https URLs (keeps Gmail OAuth redirect URI correct). Plain HTTP rejected. Fixes "pages show nothing on other devices" — app is now reachable on the LAN via the proxy instead of binding loopback-only.
+- **Secrets**: SECRET_KEY auto-generated to `data/secret_key` (gitignored) or `LEADFLOW_SECRET` env; never hardcoded. New deps: `flask-login`, `flask-wtf`, `waitress`.
+- Verified live: anon redirect; admin + user login; lockout after 16 attempts; CSRF 400 without token; all routes 200 as admin; user sees 116/1054 leads + foreign lead 404; HTTPS login with Secure cookie; dev `run.py` still works.
+
 ## [0.5.1] — 2026-08-18
 - **Phase 7 (docs freeze) complete.** PROGRESS.md cleaned (removed duplicated stale sections), push status reflects data-load commit, deferred items listed under "Deferred (see blueprint §15)". PHASES.md marks Phases 6 and 7 done.
 

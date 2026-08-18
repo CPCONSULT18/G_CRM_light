@@ -6,8 +6,14 @@ import click
 from flask import current_app, g
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "leadflow.db"
+
+
+def data_dir():
+    return Path(os.environ.get("LEADFLOW_DATA", BASE_DIR / "data"))
+
+
+def db_path():
+    return data_dir() / "leadflow.db"
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -104,6 +110,20 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    email          TEXT NOT NULL UNIQUE,
+    display_name   TEXT,
+    password_hash  TEXT NOT NULL,
+    role           TEXT NOT NULL DEFAULT 'user',
+    is_active      INTEGER NOT NULL DEFAULT 1,
+    failed_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until   TEXT,
+    last_login     TEXT,
+    created_at     TEXT DEFAULT (datetime('now')),
+    updated_at     TEXT DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_locations_company   ON locations(company_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_company    ON contacts(company_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_email      ON contacts(email);
@@ -125,6 +145,9 @@ DEFAULT_SETTINGS = {
     "gmail_client_id": "",
     "gmail_client_secret": "",
     "gmail_user": "",
+    "login_max_attempts": "15",
+    "login_window_seconds": "60",
+    "login_lock_seconds": "900",
 }
 
 # Column migrations applied to pre-existing databases (idempotent).
@@ -136,8 +159,9 @@ MIGRATIONS = [
 
 def get_db():
     if "db" not in g:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(DB_PATH)
+        d = data_dir()
+        d.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(db_path())
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         g.db = conn
@@ -163,8 +187,9 @@ def _apply_migrations(conn):
 
 
 def init_db():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    d = data_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(db_path())
     _apply_migrations(conn)
     conn.executescript(SCHEMA)
     for key, value in DEFAULT_SETTINGS.items():
@@ -202,4 +227,4 @@ def init_app(app):
 def init_db_command():
     """Create the database schema and seed default settings."""
     init_db()
-    click.echo(f"Initialized database at {DB_PATH}")
+    click.echo(f"Initialized database at {db_path()}")

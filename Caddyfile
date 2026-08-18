@@ -1,0 +1,16 @@
+# Caddy reverse proxy for LeadFlow CRM.
+#
+# LAN mode: serves https://<this-machine>:4443 with a locally-trusted cert
+# (trust the root CA at C:\Users\<you>\AppData\Local\Caddy\pki\authorities\local).
+# VPS/internet mode: replace "localhost" with the real domain, remove "tls internal",
+# and let Caddy obtain a public Let's Encrypt cert automatically.
+
+https://localhost:4443 {
+    tls internal
+
+    reverse_proxy 127.0.0.1:5000
+
+    request_body {
+        max_size 50MB
+    }
+}
