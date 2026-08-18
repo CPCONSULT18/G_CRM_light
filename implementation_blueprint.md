@@ -56,7 +56,7 @@ One row per lead. Headers (with intentional empty columns):
 Real exports are the **38-column tab-separated** sheet, not just the 11-column dealer layout. Headers include:
 `Responsible; Metro Area/State; City; City Rank; Top City Population; Investor (Group); Dealer Location Street; Dealer Location ZIP Code; Blocked by signed dealer?; Contact at Dealer (Name, Mail, Phone); Last Status; Entrypoint; Status; Sales & Service?; Acquisition Status; Acquisition Progress; [01..21 acquisition step dates]`
 
-Currently imported (verified with real row): region, city, company, street, ZIP, contact cell, and `Blocked by signed dealer?` (value `Block` -> lead status `blocked`, excluded from Today). **Everything else is ignored for now - see deferred features §15.**
+Imported (verified with real rows): region, city, company, street, ZIP, contact cell, `Blocked by signed dealer?` (value `Block` -> lead status `blocked`, excluded from Today), `Responsible` -> `leads.responsible`, and — since Phase 9 — the **acquisition data**: `Last Status`/`Entrypoint`/`Status`/`Sales & Service?`/`Acquisition Status`/`Acquisition Progress` stored on `leads` (`gad_status` is used for export `Status` to avoid clashing with `leads.status`), and the `01. First contact` … `21. Signed contract distributed` step dates stored in `pipeline_events`. See §15.1.
 
 ## 6. Matching engine
 Normalize (email lower; phone->E.164 +country; domain->base; name->strip legal forms) vs `contacted`:
@@ -75,7 +75,7 @@ OAuth `gmail.readonly`, token local, poller -> inbound activity + "Replied" badg
 `/map` starts dots-only (no key). Settings field to paste ORS key -> enables 20/30-min isochrones. Rate discipline ported from MAPTOOL3: free tier ~500 req/day; two-phase fetch (30-min then 20-min); batches of 5 with 15s pause; per-location DB cache; skip stale; honor 429 `Retry-After`; status line shows quota/pending before runs. Geocode action on empty lat/lng with PLZ fallback.
 
 ## 10. Reporting
-Calls/outcomes per day & region; pipeline counts; callback due list; dashboard cards. EOD export: one click -> today's outcomes as shared-Excel-friendly CSV for SharePoint paste. CSV export on any list.
+Calls/outcomes per day & region; pipeline counts; callback due list; dashboard cards. EOD export: one click -> today's outcomes as shared-Excel-friendly CSV for SharePoint paste. CSV export on any list. **Saved Reports & Dashboards (Phase 9)**: a report = source (`leads`/`activities`/`pipeline`) + dimension + metric + optional data/time filters + chart type (pie/bar/number), with live preview; a dashboard = a collection of saved reports rendered as Chart.js widgets on one page; saved items are owner-only + admin-sees-all; CSV export of a saved report. Chart.js is vendored locally (offline-safe). Engine in `app/reporting.py`; `run_report` returns a `SimpleNamespace` (a dict breaks Jinja because `result.values` collides with dict's `.values()`).
 
 ## 11. Visual identity (strict)
 - Primary bg: `#1A1A1B` (deep charcoal)
@@ -91,7 +91,7 @@ Import ~800 + ~250 CSVs, run dedup, verify counts, snapshot before/after.
 `backup.bat` -> timestamped copy of `data/leadflow.db`.
 
 ## 14. Phases
-See `PHASES.md` for the full checklist. Summary: 0 Repo/scaffold/docs, 1 Schema+importers+matching, 2 Today queue+reminders, 3 Map, 4 Gmail, 5 Reporting, 6 Data load, 7 Docs freeze, 8 Auth + user profiles + HTTPS.
+See `PHASES.md` for the full checklist. Summary: 0 Repo/scaffold/docs, 1 Schema+importers+matching, 2 Today queue+reminders, 3 Map, 4 Gmail, 5 Reporting, 6 Data load, 7 Docs freeze, 8 Auth + user profiles + HTTPS, 9 Acquisition fields + saved Reports/Dashboards.
 
 ## 16. Auth, user profiles, HTTPS (Phase 8)
 - **Login**: Flask-Login app-wide; `/login` + `/logout`; CSRF (Flask-WTF) on every POST; session cookie HttpOnly + SameSite=Lax, Secure when behind the TLS proxy (`LEADFLOW_COOKIE_SECURE=1`, set by `start-secure.bat`). Unauthenticated requests redirect to `/login?next=...` (open-redirect guarded).
@@ -105,9 +105,14 @@ These were intentionally scoped out to avoid feature creep, but are explicit fut
 
 ### 15.1 Acquisition pipeline tracking
 The rich export carries the full GAD dealer-acquisition pipeline as **37 date columns** (steps `01. First contact` ... `21. Signed contract distributed`, plus `LOI signed`, `Consors Quick Check Date`, etc.) plus `Last Status`, `Entrypoint`, `Status`, `Sales & Service?`, `Acquisition Status`, `Acquisition Progress`.
-- Later goal: persist these per-company/lead so pipeline history survives re-exports (not just the current `Status`), show progress in the UI, and drive reporting.
-- Proposed storage: a `pipeline_events` table (company_id, step, step_date, progress) or a JSON column on `companies`/`leads`; import step dates during CSV parse; dedupe on re-import.
-- Not yet implemented. Keep the real export safe - test file at `data/test/test_rich_export.tsv` (gitignored).
+
+**DONE in Phase 9** (user-requested feature):
+- The 6 summary fields (`Last Status`, `Entrypoint`, `Status`, `Sales & Service?`, `Acquisition Status`, `Acquisition Progress`) are stored **on `leads`** (`gad_status` = export `Status`, to avoid clashing with `leads.status`). Added via `MIGRATIONS`, idempotent on existing DBs.
+- The step dates are stored in a **`pipeline_events`** table: `id, lead_id (FK leads ON DELETE CASCADE), step_key, step_label, step_date (ISO), UNIQUE(lead_id, step_key)`. Canonical `PIPELINE_STEPS` = `01`..`21` + `LOI`. `normalize_date` handles M/D/Y, D.M.Y, ISO.
+- Importer scans for acquisition columns by header; re-importing an existing lead **updates** it (idempotent) instead of skipping; blocklist uploads carrying dealer/acquisition columns also create/update leads.
+- UI: lead detail shows an **Acquisition** section with all 22 step-date inputs (POST `/leads/<id>/acquisition`).
+- Reporting: acquisition fields + pipeline steps are dimensions in the reporting engine.
+- Residual: if the real export carries extra step columns (`LOI signed`, `Consors Quick Check Date` …), extend `PIPELINE_STEPS`/`scan_acquisition_columns` to keep them (dedupe on re-import already holds). Test file: `data/test/test_rich_export.tsv` (gitignored).
 
 ### 15.2 Blocked leads via isochrones (build our own blocklist from the map)
 The `Blocked by signed dealer?` column only covers dealers already signed by the company. The real "do not call" list should be **ours, derived from the map**: mark leads blocked/unreachable based on **driving-time isochrones** (e.g. > X minutes from us on the ORS 20/30-min maps).

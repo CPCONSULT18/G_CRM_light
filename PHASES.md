@@ -65,6 +65,19 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - [x] HTTPS: Waitress (`serve.py`) + Caddy reverse proxy (`Caddyfile`, tls internal) + `start-secure.bat`; ProxyFix; Secure cookie behind proxy; SECRET_KEY not hardcoded
 - **Acceptance:** anon redirected to login; wrong-password lockout after ~15 attempts blocks even correct pw; user sees only own leads (foreign lead 404); all routes 200 over https://localhost:4443; dev `run.py` still works. ✅ Verified live (admin + user + lockout + CSRF + HTTPS + visibility).
 
+## Phase 9 — Acquisition fields + saved Reports/Dashboards
+- [x] Persist rich-export acquisition fields on `leads` (`last_status`, `entrypoint`, `gad_status`, `sales_service`, `acquisition_status`, `acquisition_progress`) via MIGRATIONS
+- [x] `pipeline_events` table for the 22 step dates (01..21 + LOI), UNIQUE(lead_id, step_key), cascade delete
+- [x] Importer: detect acquisition columns, write 6 fields + step dates, **update existing leads on re-import** (idempotent, `leads_updated` stat)
+- [x] Blocklist upload with dealer/acquisition columns also creates/updates leads
+- [x] Lead edit UI: `/leads/<id>/acquisition` + Acquisition section on lead detail (22 step-date inputs)
+- [x] Reporting engine (`app/reporting.py`): leads/activities/pipeline sources, dims + metrics + time presets, filters (eq/ne/contains), pie/bar/number, summary rows
+- [x] Saved Reports + Dashboards (dashboard = collection of reports); Chart.js 4.4.4 vendored offline
+- [x] Owner-only + admin-sees-all scoping on saved reports/dashboards; owner/admin-only delete
+- [x] CSV export of a saved report; today-outcomes export still works
+- **Acceptance:** rich export imports 6 fields + 22 steps (ISO dates); re-import updates without duplicating; blocklist-with-acquisition upload creates a lead; edit UI saves steps; report preview/save/view/export + dashboard + pie all render 200; user sees only own reports (admin's report = 404). ✅ Verified end-to-end on the real DB.
+- **Data note:** main tables were found empty at session start (wipe predates session, matches `data/test/verify_rich.py` cleanup pattern; wiped DB backed up to `data/leadflow.db.wiped_backup`). DB rebuilt from source CSVs to Phase-6 counts (1027/1054/975/41 regions; locations 1097 after removing 6 duplicate empty-address rows), matching re-run (943 matches).
+
 ## Deferred (see blueprint §15) — do NOT miss
-- [ ] Acquisition pipeline tracking: persist the 37 step-date columns (`01. First contact` ... `21. Signed contract distributed`) + Last Status / Entrypoint / Status / Acquisition Status+Progress per company; UI progress + reporting; survives re-exports (dedupe). Test file: `data/test/test_rich_export.tsv`.
+- [x] ~~Acquisition pipeline tracking~~ — **DONE in Phase 9** (fields on `leads`, step dates in `pipeline_events`, edit UI, reporting). Residual granularity (`LOI signed`, `Consors Quick Check Date`) can be added if the real export carries them.
 - [ ] Blocked leads via isochrones: build our OWN blocklist from the map — flag leads outside our driving-time operating range (ORS 20/30-min isochrones) as `blocked`; threshold setting in Settings; blocked status already excluded from Today.

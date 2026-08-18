@@ -2,6 +2,20 @@
 
 All notable changes to this project, dated.
 
+## [0.7.0] — 2026-08-18
+- **Phase 9 (acquisition fields + saved Reports/Dashboards) complete.**
+- **Acquisition fields on `leads`**: `last_status`, `entrypoint`, `gad_status` (export `Status`, renamed to avoid clashing with `leads.status`), `sales_service`, `acquisition_status`, `acquisition_progress`. Added idempotently via `MIGRATIONS`, so existing DBs upgrade in place.
+- **`pipeline_events` table**: 22 step dates (01..21 + `LOI`) per lead, `UNIQUE(lead_id, step_key)`, cascade delete. Canonical `PIPELINE_STEPS` in `app/importer.py`; `normalize_date` handles M/D/Y, D.M.Y, ISO.
+- **Importer**: detects acquisition columns by header (rich-export or blocklist files); writes the 6 fields + step dates. **Re-importing an existing lead now UPDATES it instead of skipping** (stats gain `leads_updated`).
+- **Blocklist upload**: a blocklist file carrying dealer/acquisition columns now also creates/updates leads (contacted rows for matching still written).
+- **Lead edit UI**: POST `/leads/<id>/acquisition` + "Acquisition" section on lead detail with all 22 step-date inputs.
+- **Reporting engine** (`app/reporting.py`): sources `leads`/`activities`/`pipeline`; dimensions + metrics + time presets (7d/30d/90d/this month/custom); filters (eq/ne/contains); chart types **pie / bar / number**; summary rows; visibility rule applied for normal users. `run_report` returns a `SimpleNamespace` (a dict broke Jinja via `result.values` colliding with dict's `.values()`).
+- **Saved Reports & Dashboards**: `reports` table (`owner_id` FK, `kind` report|dashboard, `config_json`); reports page shows saved list; a **Dashboard is a collection of saved reports** (Chart.js widgets on one page). Saved items are **owner-only + admin sees all** (foreign report = 404). CSV export of a saved report added.
+- **Chart.js 4.4.4 vendored locally** (`app/static/vendor/chart.umd.min.js`) — offline-safe, no new Python deps.
+- **DATA NOTE**: at session start the main tables were already empty (wipe predates the session; emptied-table set matches `data/test/verify_rich.py` cleanup; wiped DB kept at `data/leadflow.db.wiped_backup`). DB rebuilt from intact source CSVs to Phase-6 counts: 1027 companies, 1054 leads, 1097 locations (1103 minus 6 duplicate empty-address rows), 975 contacts, 41 regions, 875 new + 179 blocked; matching re-run -> 943 matches (330 hard / 455 probable / 158 soft).
+- Verified end-to-end on the real DB: rich export (6 fields + 22 steps, ISO), re-import updates without duplicating, blocklist-with-acquisition creates a lead, edit UI saves steps, report preview/save/view/export + dashboard + pie all 200, owner scoping 404s on foreign reports.
+- Docs updated (PROGRESS, PHASES, blueprint §5a/§10/§15.1), README gains Reports/Dashboards + acquisition field notes. Pushed all commits to origin/main; tag `v0.7.0`.
+
 ## [0.6.1] — 2026-08-18
 - **Backup & restore documented.** README gained a "Backup & restore" section: GitHub = code fallback (clone → pip install → `init-db` → `create-user` → run), data stays local (`backup.bat` → `LEADFLOW_backups\`). Release tag `v0.6.0` created at the Phase 8 commit as a stable restore point.
 
