@@ -47,7 +47,7 @@
 - Gmail live test needs Google Cloud OAuth client (user action).
 
 ## GitHub push status
-- Local commits ahead of origin/main (Phases 0-1, 2, rich-layout, docs+geocode-test, isochrones fix, reporting, gmail, data load). User handles pushes.
+- All local work is pushed to origin/main (Phases 0-8 + docs/blueprint updates).
 
 ## Key decisions (for continuity)
 - No separate `tasks` table: reminders are `activities` with `due_date` + status.

@@ -11,6 +11,7 @@ All notable changes to this project, dated.
 - **HTTPS**: `serve.py` (Waitress on 127.0.0.1:5000) behind `Caddyfile` reverse proxy (tls internal, https://localhost:4443) + `start-secure.bat`. ProxyFix so Flask builds https URLs (keeps Gmail OAuth redirect URI correct). Plain HTTP rejected. Fixes "pages show nothing on other devices" — app is now reachable on the LAN via the proxy instead of binding loopback-only.
 - **Secrets**: SECRET_KEY auto-generated to `data/secret_key` (gitignored) or `LEADFLOW_SECRET` env; never hardcoded. New deps: `flask-login`, `flask-wtf`, `waitress`.
 - Verified live: anon redirect; admin + user login; lockout after 16 attempts; CSRF 400 without token; all routes 200 as admin; user sees 116/1054 leads + foreign lead 404; HTTPS login with Secure cookie; dev `run.py` still works.
+- Blueprint updated: new §16 (auth/user/HTTPS), deps, schema table, startup modes; PROGRESS push status updated. Pushed all commits to origin/main.
 
 ## [0.5.1] — 2026-08-18
 - **Phase 7 (docs freeze) complete.** PROGRESS.md cleaned (removed duplicated stale sections), push status reflects data-load commit, deferred items listed under "Deferred (see blueprint §15)". PHASES.md marks Phases 6 and 7 done.

@@ -7,11 +7,12 @@ Self-hosted, single-user light CRM for cold outreach: CSV import (blocklist + so
 
 ## 1. Tech stack
 - Python 3.11 + Flask + SQLite (stdlib `sqlite3`); server-rendered pages; no frontend build
-- Deps: `flask`, `google-api-python-client`, `google-auth`, `google-auth-oauthlib`, `requests`, `python-dotenv`
+- Deps: `flask`, `flask-login`, `flask-wtf`, `waitress`, `google-api-python-client`, `google-auth`, `google-auth-oauthlib`, `requests`, `python-dotenv`
 - Map: Leaflet 1.9.4 (CDN) + OSM tiles; MAPTOOL3 logic ported to `/map`
 - Geocoding: Nominatim (1.1s delay, `countrycodes=de`, PLZ fallback)
 - Isochrones: OpenRouteService v2, strict rate discipline
-- Startup: `start.bat` -> Flask -> `http://localhost:5000`
+- Startup (dev): `start.bat` -> Flask -> `http://localhost:5000`
+- Startup (secure/LAN): `start-secure.bat` -> Waitress (`serve.py`, 127.0.0.1:5000) behind Caddy reverse proxy -> `https://localhost:4443` (`Caddyfile`, `tls internal`; real domain + Let's Encrypt when public)
 
 ## 2. Repository
 - Private-then-public repo `github.com/CPCONSULT18/G_CRM_light` (now public).
@@ -35,9 +36,12 @@ Self-hosted, single-user light CRM for cold outreach: CSV import (blocklist + so
 | `activities` | Calls/emails/inbound + outcomes + due_date (reminder engine) | N-1 leads |
 | `contacted` | Imported blocklist | -- |
 | `matches` | Dedup (lead<->contacted, field, confidence) | N-1 leads, N-1 contacted |
-| `settings` | Country code, ORS key, Gmail path | -- |
+| `settings` | Country code, ORS key, Gmail path, login lockout tuning | -- |
+| `users` | App logins: email, display_name, password_hash, role (admin/user), is_active, failed_attempts, locked_until, last_login | -- |
 
 No separate tasks table: callbacks/follow-ups are `activities` with `due_date` + `status`(open/done); the Today view is the task list.
+
+**Visibility rule:** a normal user sees only leads where `leads.responsible` == their `display_name`; admins see everything. Roles are admin + user only.
 
 ## 5. CSV importers (dealer layout)
 One row per lead. Headers (with intentional empty columns):
@@ -87,7 +91,14 @@ Import ~800 + ~250 CSVs, run dedup, verify counts, snapshot before/after.
 `backup.bat` -> timestamped copy of `data/leadflow.db`.
 
 ## 14. Phases
-See `PHASES.md` for the full checklist. Summary: 0 Repo/scaffold/docs, 1 Schema+importers+matching, 2 Today queue+reminders, 3 Map, 4 Gmail, 5 Reporting, 6 Data load, 7 Docs freeze.
+See `PHASES.md` for the full checklist. Summary: 0 Repo/scaffold/docs, 1 Schema+importers+matching, 2 Today queue+reminders, 3 Map, 4 Gmail, 5 Reporting, 6 Data load, 7 Docs freeze, 8 Auth + user profiles + HTTPS.
+
+## 16. Auth, user profiles, HTTPS (Phase 8)
+- **Login**: Flask-Login app-wide; `/login` + `/logout`; CSRF (Flask-WTF) on every POST; session cookie HttpOnly + SameSite=Lax, Secure when behind the TLS proxy (`LEADFLOW_COOKIE_SECURE=1`, set by `start-secure.bat`). Unauthenticated requests redirect to `/login?next=...` (open-redirect guarded).
+- **Lockout (Maptool-V3 cadence)**: sliding-window rate limiter keyed email+IP, default ~15 attempts/min (`login_max_attempts`/`login_window_seconds` in Settings). On overflow the user row is locked `login_lock_seconds` (default 900) via `users.locked_until` (persisted, survives restart); even a correct password is rejected while locked. Admin unlocks in the Users page.
+- **Roles**: `admin` (Users page incl. create/disable/unlock/reset pw; Settings incl. Gmail + wipe; Import/Matches) and `user` (own leads only via the responsible==display_name visibility rule above). Bootstrap: `flask create-user --email ... --role admin`. Profile page changes display name/password.
+- **HTTPS**: production runs Waitress on 127.0.0.1:5000 behind Caddy (`tls internal` on LAN; swap to a real domain + `tls` for Let's Encrypt when public). ProxyFix (Werkzeug) so Flask sees `X-Forwarded-Proto` and builds correct https URLs — this keeps the Gmail OAuth redirect URI (`https://<host>:4443/gmail/callback`) valid. Plain HTTP on the proxy port is rejected.
+- **Secrets**: `SECRET_KEY` auto-generated to `data/secret_key` (gitignored) or via `LEADFLOW_SECRET` env; never hardcoded. Gmail token + ORS key stay in `data/` (gitignored).
 
 ## 15. Deferred features (do NOT miss - revisit after core phases)
 These were intentionally scoped out to avoid feature creep, but are explicit future work. Track here, not in code.
