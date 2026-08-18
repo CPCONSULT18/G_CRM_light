@@ -10,9 +10,10 @@
 - Phase 0 fully: repo cloned, git identity set, MAPTOOL3 heritage copied to `app/map/heritage/`, docs written, scaffold pushed.
 - Phase 1 fully: Flask app skeleton (factory + 6 blueprints), DB schema + settings seed, importer (dealer layout, contact-cell regex parser, latin-1/UTF-8 autodetect, **idempotent** Investor grouping), matching engine (hard/probable/soft), import UI with preview, match review, lead list + detail + outcome logging. Visual identity theme.css + base templates.
 - Phase 2 fully: dedicated **Today queue** (`/today`): callbacks due (activity due_date <= today) + fresh queue (status new/called/no_answer/voicemail, hard matches excluded), region->oldest. Outcome logging flips lead status (callback/appointment/won/lost/not_interested/called). Verified: appointment logs and removes lead from queue; callback creates due_date activity.
+- **Rich SharePoint export layout supported** (importer): 38-column tab-separated files import cleanly; `Blocked by signed dealer?` column value `Block` sets lead status `blocked` (excluded from Today queue). Verified with a real export row, marked source `test`.
 
 ## Where we stopped
-- After verifying Phase 2. DB reset to clean state after each test. Test CSVs at `samples/sample_leads.csv` + `samples/sample_blocklist.csv`.
+- After verifying rich-layout import. DB reset to clean state after each test. Test CSVs at `samples/sample_leads.csv` + `samples/sample_blocklist.csv`; rich export at `data/test/test_rich_export.tsv`.
 
 ## What is next (in order)
 1. Phase 3 — Map: code complete (dots-only + geocode + rate-safe isochrones); needs live test. No ORS key set -> runs dots-only.

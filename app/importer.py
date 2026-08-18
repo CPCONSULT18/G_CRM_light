@@ -25,6 +25,7 @@ HEADER_MAP = [
     ("address", ["dealer location street", "street", "strasse", "straße", "address"]),
     ("plz", ["zip", "plz", "postal", "postleitzahl"]),
     ("contact", ["contact at dealer", "contact", "kontakt"]),
+    ("blocked", ["blocked by signed dealer", "blocked"]),
 ]
 
 POSITIONAL_DEFAULTS = {
@@ -34,6 +35,7 @@ POSITIONAL_DEFAULTS = {
     "address": 6,
     "plz": 7,
     "contact": 10,
+    "blocked": 8,
 }
 
 
@@ -152,6 +154,8 @@ def import_lead_csv(raw, source_label="", lead_source="imported"):
             plz = cell(row, "plz")
             contact_raw = cell(row, "contact")
             c_name, c_email, c_phone = parse_contact_cell(contact_raw)
+            blocked_raw = cell(row, "blocked")
+            blocked = bool(blocked_raw and blocked_raw.lower().startswith("block"))
 
             if not company_name:
                 stats["errors"].append(f"Row {i}: no Investor (Group) name, skipped.")
@@ -195,8 +199,14 @@ def import_lead_csv(raw, source_label="", lead_source="imported"):
 
             if not _lead_exists(db, cid, region, lead_source or source_label or None):
                 cur = db.execute(
-                    "INSERT INTO leads (company_id, source, region, status) VALUES (?, ?, ?, 'new')",
-                    (cid, lead_source or source_label or None, region),
+                    "INSERT INTO leads (company_id, source, region, status) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        cid,
+                        lead_source or source_label or None,
+                        region,
+                        "blocked" if blocked else "new",
+                    ),
                 )
                 stats["leads_created"] += 1
             else:

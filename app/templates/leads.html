@@ -7,7 +7,7 @@
   <input type="text" name="region" placeholder="Region / Metro Area" value="{{ filters.region }}">
   <select name="status">
     <option value="">All statuses</option>
-    {% for s in ['new','called','callback','appointment','not_interested','won','lost'] %}
+    {% for s in ['new','called','callback','appointment','not_interested','won','lost','blocked'] %}
     <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>

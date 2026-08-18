@@ -2,6 +2,12 @@
 
 All notable changes to this project, dated.
 
+## [0.3.1] — 2026-08-18
+- Importer: handle the **rich SharePoint export layout** (38 columns, tab-separated): maps `Metro Area/State`, `Investor (Group)`, `Dealer Location Street`, `Dealer Location ZIP Code`, `Contact at Dealer (Name, Mail, Phone)`.
+- New `Blocked by signed dealer?` column: `Block` sets lead status to `blocked`, keeping it out of the Today call queue.
+- Leads filter dropdown now includes `blocked`.
+- Verified with a real export row (`Autohaus am Goetheplatz`, München): imported as source `test`, status `blocked`, all pages 200, excluded from Today.
+
 ## [0.3.0] — 2026-08-18
 - Phase 2 complete: dedicated Today queue (`/today`).
 - Added: Today view = callbacks due (activities with due_date <= today) + fresh queue (leads in new/called/no_answer/voicemail status, hard matches excluded), sorted region -> oldest.
