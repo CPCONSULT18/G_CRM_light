@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS leads (
     company_id  INTEGER REFERENCES companies(id) ON DELETE CASCADE,
     source      TEXT,
     region      TEXT,
+    responsible TEXT,
     qual_score  INTEGER DEFAULT 0,
     status      TEXT DEFAULT 'new',
     created_at  TEXT DEFAULT (datetime('now')),
@@ -129,6 +130,7 @@ DEFAULT_SETTINGS = {
 # Column migrations applied to pre-existing databases (idempotent).
 MIGRATIONS = [
     ("activities", "gmail_msg_id", "TEXT"),
+    ("leads", "responsible", "TEXT"),
 ]
 
 

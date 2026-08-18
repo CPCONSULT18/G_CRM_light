@@ -3,7 +3,7 @@
 {% block content %}
 <p class="small muted"><a href="{{ url_for('leads.list_leads') }}">← All leads</a></p>
 <h1>{{ lead.company_name }}</h1>
-<p class="muted">Region: {{ lead.company_region or lead.region or '—' }} · Status: {{ lead.status }} · Source: {{ lead.source or '—' }}</p>
+<p class="muted">Region: {{ lead.company_region or lead.region or '—' }} · Status: {{ lead.status }} · Source: {{ lead.source or '—' }}{% if lead.responsible %} · Responsible: {{ lead.responsible }}{% endif %}</p>
 
 {% if matches %}
 <h2>Dedup matches</h2>

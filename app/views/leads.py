@@ -11,7 +11,7 @@ def _lead_query(filters):
     match_filter = filters.get("match", "")
 
     sql = """
-        SELECT l.id, l.source, l.region, l.qual_score, l.status, l.created_at,
+        SELECT l.id, l.source, l.region, l.responsible, l.qual_score, l.status, l.created_at,
                c.name AS company_name, c.id AS company_id,
                (SELECT COUNT(*) FROM contacts k WHERE k.company_id = c.id) AS n_contacts,
                (SELECT COUNT(*) FROM locations o WHERE o.company_id = c.id) AS n_locations,
@@ -158,13 +158,14 @@ def export_leads():
     buf = io.StringIO()
     writer = csv.writer(buf, delimiter=";")
     writer.writerow(
-        ["company", "region", "status", "source", "matches", "contacts", "locations", "created"]
+        ["company", "region", "responsible", "status", "source", "matches", "contacts", "locations", "created"]
     )
     for r in rows:
         writer.writerow(
             [
                 r["company_name"],
                 r["region"] or "",
+                r["responsible"] or "",
                 r["status"],
                 r["source"] or "",
                 r["match_confs"] or "",

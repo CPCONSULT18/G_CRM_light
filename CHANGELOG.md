@@ -2,6 +2,14 @@
 
 All notable changes to this project, dated.
 
+## [0.5.0] — 2026-08-18
+- **Phase 6 (data load) complete — all real CSVs imported.**
+- New `responsible` field on `leads` (schema + migration), populated from the `Responsible` column of `OriginalG.csv` (Lei/Willy/Erik/Jan/Thomas/Maike/Christian/Philipp). Shown on leads list, lead detail, and leads CSV export.
+- Importer fix: company keyword precedence — `Investor (Dealer & Brands)` now wins over a separate `Group` column (affected BWBA research file).
+- Imported (idempotent, clear source labels): WOL 9, BWBA 109, Maike-Calw 23, Maike-Heilbronn 113, Maike-Offenburg 15, Maike-VS 18, HAN 94, OriginalG 673. Duplicate files (`Heilbronn`/`Heilbronnfull`, `HAN - Kopie`) deduped by idempotency.
+- Totals: 1027 companies, 1054 leads, 1103 locations, 975 contacts, 41 regions; 875 new + 179 blocked; 0 duplicate leads.
+- Verified: fresh DB build from all source files; all pages 200; matcher scans all 1054 leads.
+
 ## [0.4.0] — 2026-08-18
 - **Phase 4 (Gmail) complete — code + mocked e2e; needs a Google Cloud OAuth client for real testing.**
 - Added `app/gmail_service.py`: OAuth flow (gmail.readonly, offline token to `data/gmail_token.json`), token refresh, reply poller (list inbox messages, match sender to contacts by exact email or domain, create `email/replied` activities, dedupe via `gmail_msg_id`).

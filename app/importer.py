@@ -18,7 +18,10 @@ from .db import get_db
 from .normalize import parse_contact_cell
 
 # Column header keywords -> internal field names.
+# Keyword order = priority: "investor" must win over "group" (BWBA files have a
+# separate Group column), and "responsible" is only present in the rich export.
 HEADER_MAP = [
+    ("responsible", ["responsible", "verantwortlich"]),
     ("region", ["metro", "area", "state", "bundesland"]),
     ("city", ["city", "ort"]),
     ("company", ["investor", "group", "firma", "company", "firm"]),
@@ -35,7 +38,6 @@ POSITIONAL_DEFAULTS = {
     "address": 6,
     "plz": 7,
     "contact": 10,
-    "blocked": 8,
 }
 
 
@@ -56,14 +58,21 @@ def detect_delimiter(header_line):
 
 
 def map_columns(header):
-    """Return {field: col_index} by matching header keywords, else position."""
+    """Return {field: col_index} by matching header keywords, else position.
+
+    Keywords are checked in priority order (HEADER_MAP order), and for each
+    keyword all columns are scanned so e.g. "investor" wins over "group".
+    """
     mapping = {}
     lowered = [h.strip().lower() for h in header]
     for field, keywords in HEADER_MAP:
         idx = None
-        for i, h in enumerate(lowered):
-            if any(k in h for k in keywords):
-                idx = i
+        for kw in keywords:
+            for i, h in enumerate(lowered):
+                if kw in h:
+                    idx = i
+                    break
+            if idx is not None:
                 break
         if idx is None:
             idx = POSITIONAL_DEFAULTS.get(field)
@@ -152,6 +161,9 @@ def import_lead_csv(raw, source_label="", lead_source="imported"):
             city = cell(row, "city")
             address = cell(row, "address")
             plz = cell(row, "plz")
+            responsible = cell(row, "responsible")
+            if responsible:
+                responsible = re.sub(r"\s+", " ", responsible).strip().title()
             contact_raw = cell(row, "contact")
             c_name, c_email, c_phone = parse_contact_cell(contact_raw)
             blocked_raw = cell(row, "blocked")
@@ -199,12 +211,13 @@ def import_lead_csv(raw, source_label="", lead_source="imported"):
 
             if not _lead_exists(db, cid, region, lead_source or source_label or None):
                 cur = db.execute(
-                    "INSERT INTO leads (company_id, source, region, status) "
-                    "VALUES (?, ?, ?, ?)",
+                    "INSERT INTO leads (company_id, source, region, responsible, status) "
+                    "VALUES (?, ?, ?, ?, ?)",
                     (
                         cid,
                         lead_source or source_label or None,
                         region,
+                        responsible or None,
                         "blocked" if blocked else "new",
                     ),
                 )

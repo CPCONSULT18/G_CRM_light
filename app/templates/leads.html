@@ -26,12 +26,13 @@
 {% if leads %}
 <table>
   <tr>
-    <th>Company</th><th>Region</th><th>Contacts</th><th>Locations</th><th>Status</th><th>Matches</th>
+    <th>Company</th><th>Region</th><th>Responsible</th><th>Contacts</th><th>Locations</th><th>Status</th><th>Matches</th>
   </tr>
   {% for l in leads %}
   <tr>
     <td><a href="{{ url_for('leads.lead_detail', lead_id=l.id) }}">{{ l.company_name }}</a>{% if l.replied %}<span class="badge ok">replied</span>{% endif %}</td>
     <td>{{ l.region or '' }}</td>
+    <td>{{ l.responsible or '' }}</td>
     <td>{{ l.n_contacts }}</td>
     <td>{{ l.n_locations }}</td>
     <td>{{ l.status }}</td>

@@ -48,8 +48,9 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** report numbers match logged activities. ✅ Verified (badges, exports with BOM + `;`).
 
 ## Phase 6 — Data load
-- [ ] Import ~800 + ~250 real CSVs, run dedup, verify counts, snapshot
-- **Acceptance:** counts match source, no data loss.
+- [x] Import ~800 + ~250 real CSVs, run dedup, verify counts, snapshot
+- [x] Add `responsible` (owner) field to leads, populated from `Responsible` column of the master export
+- **Acceptance:** counts match source, no data loss. ✅ Imported: 1027 companies, 1054 leads, 1103 locations, 975 contacts; 0 duplicate leads; `responsible` shown on leads list/detail/export.
 
 ## Phase 7 — Docs freeze
 - [ ] Final changelog, PROGRESS handoff, README polish
