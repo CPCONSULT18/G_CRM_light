@@ -36,8 +36,9 @@ Legend: `[ ]` pending · `[x]` done · `[~]` in progress · `[!]` blocked
 - **Acceptance:** upload sample, geocode empties, trigger rate-limited isochrone run. ✅ All three verified live.
 
 ## Phase 4 — Gmail (deferred)
-- [ ] OAuth client flow (gmail.readonly)
-- [ ] Poller -> inbound activity + Replied badge
+- [x] OAuth client flow (gmail.readonly) — coded, mocked-verified; needs real creds
+- [x] Poller -> inbound activity + Replied badge — coded, mocked-verified
+- [~] Live test with real Google Cloud OAuth client (user provides Client ID/Secret)
 - **Acceptance:** reply to test email surfaces on lead.
 
 ## Phase 5 — Reporting

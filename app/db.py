@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS activities (
     notes       TEXT,
     due_date    TEXT,
     status      TEXT DEFAULT 'done',
+    gmail_msg_id TEXT,
     occurred_at TEXT DEFAULT (datetime('now')),
     created_at  TEXT DEFAULT (datetime('now'))
 );
@@ -108,6 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_contacts_email      ON contacts(email);
 CREATE INDEX IF NOT EXISTS idx_contacts_phone      ON contacts(phone);
 CREATE INDEX IF NOT EXISTS idx_leads_company       ON leads(company_id);
 CREATE INDEX IF NOT EXISTS idx_activities_lead     ON activities(lead_id);
+CREATE INDEX IF NOT EXISTS idx_activities_gmail    ON activities(gmail_msg_id);
 CREATE INDEX IF NOT EXISTS idx_matches_lead        ON matches(lead_id);
 CREATE INDEX IF NOT EXISTS idx_contacted_email     ON contacted(email);
 CREATE INDEX IF NOT EXISTS idx_contacted_phone     ON contacted(phone);
@@ -119,7 +121,15 @@ DEFAULT_SETTINGS = {
     "ors_api_key": "",
     "ors_free_daily_limit": "500",
     "gmail_token_path": "",
+    "gmail_client_id": "",
+    "gmail_client_secret": "",
+    "gmail_user": "",
 }
+
+# Column migrations applied to pre-existing databases (idempotent).
+MIGRATIONS = [
+    ("activities", "gmail_msg_id", "TEXT"),
+]
 
 
 def get_db():
@@ -138,9 +148,22 @@ def close_db(_exc=None):
         db.close()
 
 
+def _apply_migrations(conn):
+    for table, column, coltype in MIGRATIONS:
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        ).fetchone()
+        if not exists:
+            continue
+        cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        if column not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+
+
 def init_db():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
+    _apply_migrations(conn)
     conn.executescript(SCHEMA)
     for key, value in DEFAULT_SETTINGS.items():
         conn.execute(

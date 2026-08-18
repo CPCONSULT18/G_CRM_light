@@ -10,10 +10,36 @@
   <label>OpenRouteService API key (isochrones)</label>
   <input type="password" name="ors_api_key" value="{{ ors_api_key }}" placeholder="dots-only until a key is set">
 
+  <h2 class="mt">Gmail (reply detection)</h2>
+  <p class="small muted">Create a Google Cloud OAuth client ID (Desktop app) with scope <code>gmail.readonly</code>, then paste the credentials below and click Connect.</p>
+
+  <label>Gmail Client ID</label>
+  <input type="text" name="gmail_client_id" value="{{ gmail_client_id }}">
+
+  <label>Gmail Client Secret</label>
+  <input type="password" name="gmail_client_secret" value="{{ gmail_client_secret }}">
+
   <p class="mt"><button type="submit" class="btn primary">Save</button></p>
 </form>
 
-<h2>Danger zone</h2>
+{% if gmail_client_id %}
+<div class="flex mt">
+  {% if gmail_connected %}
+    <span class="badge ok">Gmail connected{% if gmail_user %} as {{ gmail_user }}{% endif %}</span>
+    <form method="post" action="{{ url_for('settings.gmail_poll') }}">
+      <button type="submit" class="btn">Poll for replies now</button>
+    </form>
+    <form method="post" action="{{ url_for('settings.gmail_disconnect') }}" onsubmit="return confirm('Disconnect Gmail?')">
+      <button type="submit" class="btn">Disconnect</button>
+    </form>
+  {% else %}
+    <span class="badge">Not connected</span>
+    <a class="btn primary" href="{{ url_for('settings.gmail_connect') }}">Connect Gmail</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<h2 class="mt">Danger zone</h2>
 <form method="post" action="{{ url_for('settings.data_actions') }}" onsubmit="return confirm('Wipe all CRM data? This cannot be undone.')">
   <input type="hidden" name="action" value="wipe">
   <button type="submit" class="btn danger">Wipe CRM data</button>

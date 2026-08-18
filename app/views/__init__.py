@@ -7,4 +7,4 @@ map_bp = Blueprint("map", __name__)
 reports_bp = Blueprint("reports", __name__)
 settings_bp = Blueprint("settings", __name__)
 
-from . import main, leads, imports, map_view, reports, settings  # noqa: E402,F401
+from . import main, leads, imports, map_view, reports, settings, gmail  # noqa: E402,F401

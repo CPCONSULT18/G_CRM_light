@@ -12,7 +12,7 @@
   {% for c in callbacks %}
   <div class="flex" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--hairline);">
     <div>
-      <a href="{{ url_for('leads.lead_detail', lead_id=c.lead_id) }}">{{ c.company_name }}</a>
+      <a href="{{ url_for('leads.lead_detail', lead_id=c.lead_id) }}">{{ c.company_name }}</a>{% if c.replied %}<span class="badge ok">replied</span>{% endif %}
       <span class="muted small"> · {{ c.region or '—' }} · {{ c.n_contacts }} contact(s) · {{ c.n_locations }} location(s)</span>
       {% if c.match_confs %}
         {% for conf in c.match_confs.split(',') %}
@@ -32,7 +32,7 @@
   <div class="card">
     <div class="flex" style="justify-content: space-between;">
       <div>
-        <a href="{{ url_for('leads.lead_detail', lead_id=l.lead_id) }}" style="font-size:1.05rem;">{{ l.company_name }}</a>
+        <a href="{{ url_for('leads.lead_detail', lead_id=l.lead_id) }}" style="font-size:1.05rem;">{{ l.company_name }}</a>{% if l.replied %}<span class="badge ok">replied</span>{% endif %}
         <span class="muted small"> · {{ l.region or '—' }}</span>
         <span class="muted small"> · {{ l.n_contacts }} contact(s) · {{ l.n_locations }} location(s)</span>
         {% if l.match_confs %}

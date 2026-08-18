@@ -30,7 +30,7 @@
   </tr>
   {% for l in leads %}
   <tr>
-    <td><a href="{{ url_for('leads.lead_detail', lead_id=l.id) }}">{{ l.company_name }}</a></td>
+    <td><a href="{{ url_for('leads.lead_detail', lead_id=l.id) }}">{{ l.company_name }}</a>{% if l.replied %}<span class="badge ok">replied</span>{% endif %}</td>
     <td>{{ l.region or '' }}</td>
     <td>{{ l.n_contacts }}</td>
     <td>{{ l.n_locations }}</td>

@@ -2,6 +2,14 @@
 
 All notable changes to this project, dated.
 
+## [0.4.0] — 2026-08-18
+- **Phase 4 (Gmail) complete — code + mocked e2e; needs a Google Cloud OAuth client for real testing.**
+- Added `app/gmail_service.py`: OAuth flow (gmail.readonly, offline token to `data/gmail_token.json`), token refresh, reply poller (list inbox messages, match sender to contacts by exact email or domain, create `email/replied` activities, dedupe via `gmail_msg_id`).
+- Added Gmail section to Settings: Client ID/Secret fields, Connect (OAuth redirect), Poll now, Disconnect; shows connected user.
+- DB migration support (`MIGRATIONS` in `app/db.py`): added `activities.gmail_msg_id` column to existing DBs idempotently.
+- "Replied" badge on leads list + Today; replied leads excluded from Today fresh queue (they responded already).
+- Verified with mocked Gmail API: poll creates activity, dedupe holds, badge shows, all pages 200, migration applied.
+
 ## [0.3.4] — 2026-08-18
 - **Phase 5 (Reporting) complete.**
 - Reports page: added Today summary badges (calls, appointments, not-interested, callbacks, won).

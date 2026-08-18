@@ -54,7 +54,8 @@ def today():
                l.id AS lead_id, l.region, c.name AS company_name,
                (SELECT COUNT(*) FROM contacts k WHERE k.company_id = c.id) AS n_contacts,
                (SELECT COUNT(*) FROM locations o WHERE o.company_id = c.id) AS n_locations,
-               (SELECT GROUP_CONCAT(DISTINCT m.confidence) FROM matches m WHERE m.lead_id = l.id) AS match_confs
+               (SELECT GROUP_CONCAT(DISTINCT m.confidence) FROM matches m WHERE m.lead_id = l.id) AS match_confs,
+               EXISTS(SELECT 1 FROM activities x WHERE x.lead_id = l.id AND x.outcome = 'replied') AS replied
         FROM activities a
         JOIN leads l ON l.id = a.lead_id
         JOIN companies c ON c.id = l.company_id
@@ -72,13 +73,18 @@ def today():
                c.name AS company_name,
                (SELECT COUNT(*) FROM contacts k WHERE k.company_id = c.id) AS n_contacts,
                (SELECT COUNT(*) FROM locations o WHERE o.company_id = c.id) AS n_locations,
-               (SELECT GROUP_CONCAT(DISTINCT m.confidence) FROM matches m WHERE m.lead_id = l.id) AS match_confs
+               (SELECT GROUP_CONCAT(DISTINCT m.confidence) FROM matches m WHERE m.lead_id = l.id) AS match_confs,
+               EXISTS(SELECT 1 FROM activities a WHERE a.lead_id = l.id AND a.outcome = 'replied') AS replied
         FROM leads l
         JOIN companies c ON c.id = l.company_id
         WHERE l.status IN ('new', 'called', 'no_answer', 'voicemail')
           AND NOT EXISTS (
               SELECT 1 FROM matches m
               WHERE m.lead_id = l.id AND m.confidence = 'hard'
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM activities a
+              WHERE a.lead_id = l.id AND a.outcome = 'replied'
           )
         ORDER BY l.region, l.created_at
         """
